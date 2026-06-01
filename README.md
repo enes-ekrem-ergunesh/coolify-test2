@@ -45,7 +45,8 @@ A small Docker Compose app for personal budget tracking with:
 
 Required or useful environment variables used by this app:
 
-- `APP_PORT` *(optional, default: `3000`)* — host port exposed on `127.0.0.1`
+- `PORT` *(optional, default: `8542`)* — app listen port inside the container
+- `APP_PORT` *(optional, default: `8542`)* — host port exposed on `127.0.0.1`
 - `SESSION_SECRET` *(required)* — session signing secret; set a long random value before starting the app
 - `DATABASE_PATH` *(optional, default in container: `/app/data/budget.db`)* — SQLite database path
 - `OPENAI_API_KEY` *(optional but required for AI parsing)* — OpenAI API key
@@ -64,7 +65,7 @@ docker compose up --build
 
 Then open:
 
-- `http://127.0.0.1:3000` by default
+- `http://127.0.0.1:8542` by default
 - or `http://127.0.0.1:${APP_PORT}` if you override the port
 
 Only the main HTTP app is exposed outside the compose network. Persistence is stored in the `app-data` Docker volume.
