@@ -1,0 +1,36 @@
+{
+  "name": "coolify-test2",
+  "version": "1.0.0",
+  "description": "Message-based personal budget tracker with OpenAI-assisted parsing",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enes-ekrem-ergunesh/coolify-test2.git"
+  },
+  "keywords": [
+    "budget",
+    "docker-compose",
+    "openai",
+    "sqlite",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/enes-ekrem-ergunesh/coolify-test2/issues"
+  },
+  "homepage": "https://github.com/enes-ekrem-ergunesh/coolify-test2#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.4.6",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "openai": "^6.2.0"
+  }
+}
