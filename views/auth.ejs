@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Budget Chat</title>
+    <style>
+      :root { color-scheme: light dark; font-family: Arial, sans-serif; }
+      body { margin: 0; background: #0f172a; color: #e2e8f0; }
+      main { max-width: 920px; margin: 0 auto; padding: 2rem; }
+      .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+      .card { background: #111827; border-radius: 16px; padding: 1.25rem; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.25); }
+      label { display: block; margin-bottom: 0.35rem; font-weight: 700; }
+      input { width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid #334155; margin-bottom: 0.9rem; box-sizing: border-box; }
+      button { background: #2563eb; color: white; border: 0; border-radius: 10px; padding: 0.85rem 1rem; cursor: pointer; font-weight: 700; }
+      .flash { padding: 0.85rem 1rem; border-radius: 12px; margin-bottom: 1rem; }
+      .flash.error { background: #7f1d1d; }
+      .flash.success { background: #14532d; }
+      .flash.warning { background: #78350f; }
+      .muted { color: #94a3b8; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Budget Chat</h1>
+      <p class="muted">Register with email and password, then track income and spending by typing natural-language messages.</p>
+      <% if (flash) { %>
+        <div class="flash <%= flash.type %>"><%= flash.message %></div>
+      <% } %>
+      <div class="grid">
+        <section class="card">
+          <h2>Create account</h2>
+          <form method="post" action="/register">
+            <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+            <label for="register-email">Email</label>
+            <input id="register-email" name="email" type="email" autocomplete="email" required />
+            <label for="register-password">Password</label>
+            <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
+            <button type="submit">Register</button>
+          </form>
+        </section>
+        <section class="card">
+          <h2>Sign in</h2>
+          <form method="post" action="/login">
+            <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+            <label for="login-email">Email</label>
+            <input id="login-email" name="email" type="email" autocomplete="email" required />
+            <label for="login-password">Password</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+            <button type="submit">Login</button>
+          </form>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
