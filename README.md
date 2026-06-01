@@ -46,7 +46,7 @@ A small Docker Compose app for personal budget tracking with:
 Required or useful environment variables used by this app:
 
 - `APP_PORT` *(optional, default: `3000`)* — host port exposed on `127.0.0.1`
-- `SESSION_SECRET` *(recommended, default: `change-me`)* — session signing secret
+- `SESSION_SECRET` *(required)* — session signing secret; set a long random value before starting the app
 - `DATABASE_PATH` *(optional, default in container: `/app/data/budget.db`)* — SQLite database path
 - `OPENAI_API_KEY` *(optional but required for AI parsing)* — OpenAI API key
 - `OPENAI_MODEL` *(optional, default: `gpt-4o-mini`)* — OpenAI model name
@@ -58,6 +58,7 @@ If `OPENAI_API_KEY` is not set, the app falls back to a simple built-in parser a
 ## Run with Docker Compose
 
 ```bash
+export SESSION_SECRET='replace-with-a-long-random-secret'
 docker compose up --build
 ```
 

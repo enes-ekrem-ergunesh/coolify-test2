@@ -24,14 +24,14 @@ const KEYWORDS = {
 };
 
 const CURRENCY_KEYWORDS = {
-  USD: /\b(?:usd|us\$|dollar(?:s)?|buck'?s?)\b/i,
+  USD: /\b(?:usd|us\$|dollar(?:s)?|bucks?)\b/i,
   EUR: /\b(?:eur|euro(?:s)?)\b/i,
   GBP: /\b(?:gbp|pound(?:s)?)\b/i,
   TRY: /\b(?:try|tl|lira)\b/i,
 };
 
 function normalizeWhitespace(value) {
-  return value.replace(/\s+/g, ' ').trim();
+  return value.replace(/'/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function detectCurrency(message) {

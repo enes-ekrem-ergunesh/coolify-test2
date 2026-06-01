@@ -5,7 +5,7 @@ services:
     environment:
       PORT: 3000
       DATABASE_PATH: ${DATABASE_PATH:-/app/data/budget.db}
-      SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
