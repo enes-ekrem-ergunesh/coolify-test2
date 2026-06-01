@@ -233,13 +233,12 @@ function createApp({ db, config }) {
     const amount = Number.parseFloat(String(req.body.amount || '').trim());
     const currency = String(req.body.currency || 'USD').trim().toUpperCase() || 'USD';
     const description = String(req.body.description || '').trim();
-    const type = INCOME_CATEGORIES.includes(category)
-      ? 'income'
-      : EXPENSE_CATEGORIES.includes(category)
-        ? 'expense'
-        : req.body.type === 'income'
-          ? 'income'
-          : 'expense';
+    let type = req.body.type === 'income' ? 'income' : 'expense';
+    if (INCOME_CATEGORIES.includes(category)) {
+      type = 'income';
+    } else if (EXPENSE_CATEGORIES.includes(category)) {
+      type = 'expense';
+    }
     const allowedCategories = categoryOptions(type);
 
     const existing = db.prepare('SELECT id FROM entries WHERE id = ? AND user_id = ?').get(entryId, req.session.userId);
