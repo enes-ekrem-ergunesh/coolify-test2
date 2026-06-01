@@ -9,6 +9,20 @@ const { parseMessage } = require('./parser');
 
 function createApp({ db, config }) {
   const app = express();
+  const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 300,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    skip: (req) => req.path === '/healthz',
+  });
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+  });
+
   app.disable('x-powered-by');
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '..', 'views'));
@@ -26,15 +40,7 @@ function createApp({ db, config }) {
       },
     }),
   );
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      limit: 300,
-      standardHeaders: 'draft-8',
-      legacyHeaders: false,
-      skip: (req) => req.path === '/healthz',
-    }),
-  );
+  app.use(generalLimiter);
 
   app.use((req, res, next) => {
     if (!req.session.csrfToken) {
@@ -134,7 +140,7 @@ function createApp({ db, config }) {
     });
   });
 
-  app.post('/register', async (req, res) => {
+  app.post('/register', authLimiter, async (req, res) => {
     const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
 
@@ -149,14 +155,14 @@ function createApp({ db, config }) {
       return res.status(409).redirect('/');
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const result = db.prepare('INSERT INTO users(email, password_hash) VALUES(?, ?)').run(email, passwordHash);
     req.session.userId = result.lastInsertRowid;
     req.session.flash = { type: 'success', message: 'Welcome! Your account is ready.' };
     return res.redirect('/');
   });
 
-  app.post('/login', async (req, res) => {
+  app.post('/login', authLimiter, async (req, res) => {
     const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
     const user = db.prepare('SELECT id, password_hash FROM users WHERE email = ?').get(email);

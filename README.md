@@ -75,6 +75,8 @@ The `app` service includes a Docker health check that calls:
 
 - `GET /healthz`
 
+The provided `Dockerfile` uses Node.js 24, so the health check can rely on the built-in `fetch()` runtime.
+
 ## Local development
 
 ```bash

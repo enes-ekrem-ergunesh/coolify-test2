@@ -125,7 +125,7 @@
                   </div>
                   <div>
                     <label for="amount-<%= entry.id %>">Amount</label>
-                    <input id="amount-<%= entry.id %>" name="amount" type="number" min="0.01" step="0.01" value="<%= entry.amount || '' %>" required />
+                    <input id="amount-<%= entry.id %>" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" value="<%= entry.amount || '' %>" required />
                   </div>
                   <div>
                     <label for="currency-<%= entry.id %>">Currency</label>

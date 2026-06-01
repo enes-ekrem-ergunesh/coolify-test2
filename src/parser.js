@@ -44,11 +44,12 @@ function detectCurrency(message) {
 }
 
 function detectAmount(message) {
-  const match = message.match(/(\d+(?:[.,]\d+)?)\s*(k)?/i);
-  if (!match) {
+  const matches = [...message.matchAll(/(\d+(?:[.,]\d+)?)\s*(k)?/gi)];
+  if (matches.length === 0) {
     return null;
   }
 
+  const match = matches[matches.length - 1];
   const numeric = Number.parseFloat(match[1].replace(',', '.'));
   if (Number.isNaN(numeric)) {
     return null;
