@@ -30,6 +30,7 @@
     "better-sqlite3": "^12.4.6",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
     "express-session": "^1.18.2",
     "openai": "^6.2.0"
   }

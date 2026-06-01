@@ -1,6 +1,8 @@
 const path = require('node:path');
+const crypto = require('node:crypto');
 const bcrypt = require('bcryptjs');
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const session = require('express-session');
 const { EXPENSE_CATEGORIES, INCOME_CATEGORIES, categoryOptions } = require('./categories');
 const { parseMessage } = require('./parser');
@@ -13,22 +15,59 @@ function createApp({ db, config }) {
   app.use(express.urlencoded({ extended: false }));
   app.use(
     session({
+      name: 'budget_chat_session',
       secret: config.sessionSecret,
       resave: false,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        sameSite: 'lax',
-        secure: false,
+        sameSite: 'strict',
+        secure: config.secureCookies,
       },
+    }),
+  );
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 300,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+      skip: (req) => req.path === '/healthz',
     }),
   );
 
   app.use((req, res, next) => {
+    if (!req.session.csrfToken) {
+      req.session.csrfToken = crypto.randomUUID();
+    }
     res.locals.flash = req.session.flash || null;
+    res.locals.csrfToken = req.session.csrfToken;
     delete req.session.flash;
     res.locals.userId = req.session.userId || null;
     next();
+  });
+
+  app.use((req, res, next) => {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      return next();
+    }
+
+    const csrfToken = String(req.body?.csrfToken || '');
+    if (!csrfToken || csrfToken !== req.session.csrfToken) {
+      req.session.flash = { type: 'error', message: 'Your form expired. Please try again.' };
+      return res.status(403).redirect('/');
+    }
+
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const expectedOrigin = `${protocol}://${req.get('host')}`;
+    const origin = req.get('origin');
+    const referer = req.get('referer');
+    if ((origin && origin !== expectedOrigin) || (!origin && referer && !referer.startsWith(expectedOrigin))) {
+      req.session.flash = { type: 'error', message: 'Cross-site form submissions are not allowed.' };
+      return res.status(403).redirect('/');
+    }
+
+    return next();
   });
 
   app.get('/healthz', (_req, res) => {

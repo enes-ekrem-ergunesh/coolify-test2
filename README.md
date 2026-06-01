@@ -28,7 +28,7 @@ A small Docker Compose app for personal budget tracking with:
 - gift
 - investment
 
-### Outcome types (10)
+### Expense types (10)
 
 - groceries
 - dining
@@ -51,6 +51,7 @@ Required or useful environment variables used by this app:
 - `OPENAI_API_KEY` *(optional but required for AI parsing)* — OpenAI API key
 - `OPENAI_MODEL` *(optional, default: `gpt-4o-mini`)* — OpenAI model name
 - `OPENAI_BASE_URL` *(optional)* — alternate OpenAI-compatible base URL
+- `COOKIE_SECURE` *(optional, default: `false`)* — set to `true` only when serving the app over HTTPS
 
 If `OPENAI_API_KEY` is not set, the app falls back to a simple built-in parser and sends uncertain messages to the manual review queue.
 

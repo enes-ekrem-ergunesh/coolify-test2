@@ -35,6 +35,7 @@
           <p class="muted">Type what happened. The app will try to structure it automatically and flag anything uncertain for manual review.</p>
         </div>
         <form method="post" action="/logout">
+          <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
           <button class="ghost" type="submit">Logout</button>
         </form>
       </div>
@@ -46,6 +47,7 @@
       <section class="card">
         <h2>Quick entry</h2>
         <form method="post" action="/entries">
+          <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
           <label for="message" class="muted">Examples: “got salary 2k dollars”, “market 5 USD”, “bought a t-shirt for 5 bucks”.</label>
           <textarea id="message" name="message" rows="3" placeholder="What did you do?" required></textarea>
           <button type="submit">Save message</button>
@@ -112,6 +114,7 @@
               <p><strong>Message:</strong> <%= entry.message %></p>
               <p class="muted"><%= entry.parser_reason || 'Needs manual confirmation.' %></p>
               <form method="post" action="/entries/<%= entry.id %>/resolve">
+                <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
                 <div class="compact-grid">
                   <div>
                     <label for="type-<%= entry.id %>">Type</label>

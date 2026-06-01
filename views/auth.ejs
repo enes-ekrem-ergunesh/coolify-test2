@@ -31,6 +31,7 @@
         <section class="card">
           <h2>Create account</h2>
           <form method="post" action="/register">
+            <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
             <label for="register-email">Email</label>
             <input id="register-email" name="email" type="email" autocomplete="email" required />
             <label for="register-password">Password</label>
@@ -41,6 +42,7 @@
         <section class="card">
           <h2>Sign in</h2>
           <form method="post" action="/login">
+            <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
             <label for="login-email">Email</label>
             <input id="login-email" name="email" type="email" autocomplete="email" required />
             <label for="login-password">Password</label>
