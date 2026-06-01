@@ -3,7 +3,7 @@ services:
     build:
       context: .
     environment:
-      PORT: 3000
+      PORT: ${PORT:-8542}
       DATABASE_PATH: ${DATABASE_PATH:-/app/data/budget.db}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
@@ -11,11 +11,11 @@ services:
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
     ports:
-      - "127.0.0.1:${APP_PORT:-3000}:3000"
+      - "127.0.0.1:${APP_PORT:-8542}:${PORT:-8542}"
     volumes:
       - app-data:/app/data
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:${PORT:-8542}/healthz').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5
