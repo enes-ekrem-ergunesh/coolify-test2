@@ -53,7 +53,7 @@ function createApp({ db, config }) {
     res.locals.pendingCount = 0;
     res.locals.plural = (n, singular, pluralForm) => n === 1 ? singular : (pluralForm || `${singular}s`);
     if (req.session.userId) {
-      const row = db.prepare("SELECT COUNT(*) AS cnt FROM entries WHERE user_id = ? AND status = 'manual'").get(req.session.userId);
+      const row = db.prepare("SELECT COUNT(*) AS cnt FROM entries WHERE user_id = ? AND status = 'manual' AND deleted_at IS NULL").get(req.session.userId);
       res.locals.pendingCount = row ? row.cnt : 0;
     }
     next();
@@ -97,7 +97,7 @@ function createApp({ db, config }) {
                 ROUND(SUM(CASE WHEN type = 'income' AND status = 'complete' THEN amount ELSE 0 END), 2) AS income_total,
                 ROUND(SUM(CASE WHEN type = 'expense' AND status = 'complete' THEN amount ELSE 0 END), 2) AS expense_total
          FROM entries
-         WHERE user_id = ?
+         WHERE user_id = ? AND deleted_at IS NULL
          GROUP BY currency
          ORDER BY currency ASC`,
       )
@@ -113,7 +113,7 @@ function createApp({ db, config }) {
                 ROUND(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 2) AS month_income,
                 ROUND(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 2) AS month_expense
          FROM entries
-         WHERE user_id = ? AND status = 'complete'
+         WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL
            AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
          GROUP BY currency
          ORDER BY currency ASC`,
@@ -126,14 +126,14 @@ function createApp({ db, config }) {
            COUNT(CASE WHEN type = 'income' THEN 1 END) AS total_income_count,
            COUNT(CASE WHEN type = 'expense' THEN 1 END) AS total_expense_count
          FROM entries
-         WHERE user_id = ? AND status = 'complete'`,
+         WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL`,
       )
       .get(req.session.userId);
 
     const topCatRow = db
       .prepare(
         `SELECT category FROM entries
-         WHERE user_id = ? AND status = 'complete' AND type = 'expense'
+         WHERE user_id = ? AND status = 'complete' AND type = 'expense' AND deleted_at IS NULL
          GROUP BY category
          ORDER BY SUM(amount) DESC
          LIMIT 1`,
@@ -150,14 +150,20 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT id, message, type, category, amount, currency, description, status, parser_source, created_at
          FROM entries
-         WHERE user_id = ? AND status = 'complete'
+        WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL
          ORDER BY created_at DESC, id DESC
          LIMIT 12`,
       )
       .all(req.session.userId);
 
+    const walletByCurrency = balances.map((row) => ({
+      currency: row.currency,
+      amount: row.balance,
+    }));
+
     return res.render('dashboard', {
       balances,
+      walletByCurrency,
       thisMonth,
       stats,
       recentEntries,
@@ -172,7 +178,7 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT id, type, category, amount, currency, description, created_at
          FROM entries
-         WHERE user_id = ? AND status = 'complete' AND type = 'income'
+         WHERE user_id = ? AND status = 'complete' AND type = 'income' AND deleted_at IS NULL
          ORDER BY created_at DESC, id DESC`,
       )
       .all(req.session.userId);
@@ -187,7 +193,7 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT id, type, category, amount, currency, description, created_at
          FROM entries
-         WHERE user_id = ? AND status = 'complete' AND type = 'expense'
+         WHERE user_id = ? AND status = 'complete' AND type = 'expense' AND deleted_at IS NULL
          ORDER BY created_at DESC, id DESC`,
       )
       .all(req.session.userId);
@@ -202,7 +208,7 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT type, category, currency, ROUND(SUM(amount), 2) AS total, COUNT(*) AS count
          FROM entries
-         WHERE user_id = ? AND status = 'complete'
+         WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL
          GROUP BY type, category, currency
          ORDER BY total DESC, category ASC`,
       )
@@ -233,7 +239,7 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT id, message, type, category, amount, currency, description, parser_reason, created_at
          FROM entries
-         WHERE user_id = ? AND status = 'manual'
+         WHERE user_id = ? AND status = 'manual' AND deleted_at IS NULL
          ORDER BY created_at DESC, id DESC`,
       )
       .all(req.session.userId);
@@ -253,7 +259,7 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT DISTINCT strftime('%Y-%m', created_at) AS month
          FROM entries
-         WHERE user_id = ? AND status = 'complete'
+         WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL
          ORDER BY month DESC`,
       )
       .all(req.session.userId)
@@ -271,7 +277,7 @@ function createApp({ db, config }) {
                 ROUND(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 2) AS income_total,
                 ROUND(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 2) AS expense_total
          FROM entries
-         WHERE user_id = ? AND status = 'complete'
+         WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL
            AND strftime('%Y-%m', created_at) = ?
          GROUP BY currency
          ORDER BY currency ASC`,
@@ -282,12 +288,34 @@ function createApp({ db, config }) {
       .prepare(
         `SELECT type, category, currency, ROUND(SUM(amount), 2) AS total, COUNT(*) AS count
          FROM entries
-         WHERE user_id = ? AND status = 'complete'
+        WHERE user_id = ? AND status = 'complete' AND deleted_at IS NULL
            AND strftime('%Y-%m', created_at) = ?
          GROUP BY type, category, currency
          ORDER BY type ASC, total DESC`,
       )
       .all(req.session.userId, selectedMonth);
+
+    const [year, month] = selectedMonth.split('-').map((part) => Number.parseInt(part, 10));
+    const monthStart = `${selectedMonth}-01`;
+    const monthEnd = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+    const monthlyWallet = db
+      .prepare(
+       `SELECT currency,
+               ROUND(SUM(CASE WHEN created_at < ? AND type = 'income' AND status = 'complete' THEN amount ELSE 0 END), 2) AS opening_income,
+               ROUND(SUM(CASE WHEN created_at < ? AND type = 'expense' AND status = 'complete' THEN amount ELSE 0 END), 2) AS opening_expense,
+               ROUND(SUM(CASE WHEN created_at < ? AND type = 'income' AND status = 'complete' THEN amount ELSE 0 END), 2) AS closing_income,
+               ROUND(SUM(CASE WHEN created_at < ? AND type = 'expense' AND status = 'complete' THEN amount ELSE 0 END), 2) AS closing_expense
+        FROM entries
+        WHERE user_id = ? AND deleted_at IS NULL
+        GROUP BY currency
+        ORDER BY currency ASC`,
+      )
+      .all(monthStart, monthStart, monthEnd, monthEnd, req.session.userId)
+      .map((row) => ({
+       currency: row.currency,
+       startMoney: Number((row.opening_income - row.opening_expense).toFixed(2)),
+       endMoney: Number((row.closing_income - row.closing_expense).toFixed(2)),
+      }));
 
     const maxByTypeCurrency = {};
     for (const row of rawBreakdown) {
@@ -307,9 +335,25 @@ function createApp({ db, config }) {
       availableMonths,
       selectedMonth,
       monthlySummary,
+      monthlyWallet,
       categoryBreakdown,
       activePage: 'report',
     });
+  });
+
+  app.get('/trash', (req, res) => {
+    if (!req.session.userId) return res.status(401).redirect('/');
+
+    const deletedEntries = db
+      .prepare(
+        `SELECT id, message, type, category, amount, currency, description, status, created_at, deleted_at
+         FROM entries
+         WHERE user_id = ? AND deleted_at IS NOT NULL
+         ORDER BY deleted_at DESC, id DESC`,
+      )
+      .all(req.session.userId);
+
+    return res.render('trash', { deletedEntries, activePage: 'trash' });
   });
 
   app.post('/register', authLimiter, async (req, res) => {
@@ -413,7 +457,7 @@ function createApp({ db, config }) {
     }
     const allowedCategories = categoryOptions(type);
 
-    const existing = db.prepare('SELECT id FROM entries WHERE id = ? AND user_id = ?').get(entryId, req.session.userId);
+    const existing = db.prepare('SELECT id FROM entries WHERE id = ? AND user_id = ? AND deleted_at IS NULL').get(entryId, req.session.userId);
     if (!existing) {
       req.session.flash = { type: 'error', message: 'Entry not found.' };
       return res.status(404).redirect('/');
@@ -427,7 +471,7 @@ function createApp({ db, config }) {
     db.prepare(
       `UPDATE entries
        SET type = ?, category = ?, amount = ?, currency = ?, description = ?, status = 'complete', parser_reason = NULL, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ? AND user_id = ?`,
+       WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
     ).run(type, category, amount, currency, description, entryId, req.session.userId);
 
     req.session.flash = { type: 'success', message: 'Entry finalized successfully.' };
@@ -441,7 +485,7 @@ function createApp({ db, config }) {
 
     const entryId = Number.parseInt(req.params.id, 10);
     const existing = db
-      .prepare("SELECT id FROM entries WHERE id = ? AND user_id = ? AND status = 'manual'")
+     .prepare("SELECT id FROM entries WHERE id = ? AND user_id = ? AND status = 'manual' AND deleted_at IS NULL")
       .get(entryId, req.session.userId);
 
     if (!existing) {
@@ -449,9 +493,49 @@ function createApp({ db, config }) {
       return res.status(404).redirect('/review');
     }
 
-    db.prepare('DELETE FROM entries WHERE id = ? AND user_id = ?').run(entryId, req.session.userId);
-    req.session.flash = { type: 'success', message: 'Entry dismissed.' };
+    db.prepare('UPDATE entries SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(entryId, req.session.userId);
+    req.session.flash = { type: 'success', message: 'Entry moved to trash.' };
     return res.redirect('/review');
+  });
+
+  app.post('/entries/:id/archive', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).redirect('/');
+    }
+
+    const entryId = Number.parseInt(req.params.id, 10);
+    const existing = db
+      .prepare("SELECT id, type FROM entries WHERE id = ? AND user_id = ? AND status = 'complete' AND deleted_at IS NULL")
+      .get(entryId, req.session.userId);
+
+    if (!existing) {
+      req.session.flash = { type: 'error', message: 'Entry not found.' };
+      return res.status(404).redirect('/');
+    }
+
+    db.prepare('UPDATE entries SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(entryId, req.session.userId);
+    req.session.flash = { type: 'success', message: 'Entry moved to trash.' };
+    return res.redirect(existing.type === 'income' ? '/incomes' : '/expenses');
+  });
+
+  app.post('/entries/:id/delete', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).redirect('/');
+    }
+
+    const entryId = Number.parseInt(req.params.id, 10);
+    const existing = db
+      .prepare('SELECT id FROM entries WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL')
+      .get(entryId, req.session.userId);
+
+    if (!existing) {
+      req.session.flash = { type: 'error', message: 'Deleted entry not found.' };
+      return res.status(404).redirect('/trash');
+    }
+
+    db.prepare('DELETE FROM entries WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL').run(entryId, req.session.userId);
+    req.session.flash = { type: 'success', message: 'Entry permanently deleted.' };
+    return res.redirect('/trash');
   });
 
   return app;

@@ -47,7 +47,7 @@
               </form>
               <form method="post" action="/entries/<%= entry.id %>/dismiss" style="margin-top:0.5rem;">
                 <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
-                <button type="submit" class="danger">Dismiss</button>
+                <button type="submit" class="danger">Move to trash</button>
               </form>
             </li>
           <% }) %>

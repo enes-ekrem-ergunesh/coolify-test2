@@ -6,7 +6,9 @@ A small Docker Compose app for personal budget tracking with:
 - a single natural-language message field for entry creation
 - OpenAI-assisted parsing for income and expense entries
 - a manual review queue for anything the parser cannot confidently understand
+- soft delete (trash) and permanent delete flow for entries
 - basic budget analytics (balances and category totals)
+- wallet balance visibility and monthly start/end money reporting
 - SQLite persistence
 - a Docker health check for the main app
 

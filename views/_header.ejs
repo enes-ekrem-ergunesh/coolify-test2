@@ -66,6 +66,7 @@
         <a href="/expenses" class="nav-link <%= activePage === 'expenses' ? 'active' : '' %>">Expenses</a>
         <a href="/categories" class="nav-link <%= activePage === 'categories' ? 'active' : '' %>">Categories</a>
         <a href="/review" class="nav-link <%= activePage === 'review' ? 'active' : '' %>">Review<% if (pendingCount > 0) { %><span class="badge"><%= pendingCount %></span><% } %></a>
+        <a href="/trash" class="nav-link <%= activePage === 'trash' ? 'active' : '' %>">Trash</a>
         <a href="/report" class="nav-link <%= activePage === 'report' ? 'active' : '' %>">Report</a>
       </nav>
       <% if (flash) { %>

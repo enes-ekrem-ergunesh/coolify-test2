@@ -76,6 +76,21 @@
         </section>
       <% } %>
 
+      <section class="card" style="margin-bottom:1rem;">
+        <h2>Wallet</h2>
+        <ul class="list">
+          <% if (walletByCurrency.length === 0) { %>
+            <li class="item muted">No wallet balance yet.</li>
+          <% } %>
+          <% walletByCurrency.forEach((wallet) => { %>
+            <li class="item" style="display:flex;justify-content:space-between;align-items:center;">
+              <strong><%= wallet.currency || 'N/A' %></strong>
+              <span class="number <%= wallet.amount >= 0 ? 'positive' : 'negative' %>"><%= wallet.amount %></span>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+
       <section class="card">
         <h2>Recent entries</h2>
         <ul class="list">

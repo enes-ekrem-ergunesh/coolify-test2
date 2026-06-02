@@ -11,6 +11,10 @@
               <div><span class="pill income">income</span> <strong><%= entry.amount %> <%= entry.currency %></strong> in <%= entry.category %></div>
               <div><%= entry.description %></div>
               <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= entry.created_at %></div>
+              <form method="post" action="/entries/<%= entry.id %>/archive" style="margin-top:0.5rem;">
+                <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                <button type="submit" class="danger">Move to trash</button>
+              </form>
             </li>
           <% }) %>
         </ul>

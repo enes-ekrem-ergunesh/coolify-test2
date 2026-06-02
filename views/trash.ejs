@@ -1,0 +1,24 @@
+<%- include('_header', { activePage: 'trash' }) %>
+
+      <section class="card">
+        <h2>Trash</h2>
+        <p class="muted" style="margin-top:0;">Soft deleted entries appear here until you permanently remove them.</p>
+        <ul class="list">
+          <% if (deletedEntries.length === 0) { %>
+            <li class="item muted">Trash is empty.</li>
+          <% } %>
+          <% deletedEntries.forEach((entry) => { %>
+            <li class="item">
+              <div><span class="pill <%= entry.type === 'income' ? 'income' : (entry.type === 'expense' ? 'expense' : 'default') %>"><%= entry.type || entry.status %></span> <strong><%= entry.amount || '-' %> <%= entry.currency || '' %></strong> in <%= entry.category || 'uncategorized' %></div>
+              <div><%= entry.description || entry.message %></div>
+              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;">Deleted at: <%= entry.deleted_at %></div>
+              <form method="post" action="/entries/<%= entry.id %>/delete" style="margin-top:0.5rem;">
+                <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                <button type="submit" class="danger">Delete permanently</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+
+<%- include('_footer') %>
