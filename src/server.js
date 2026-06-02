@@ -2,15 +2,18 @@ const { createApp } = require('./app');
 const { openDatabase, initDb } = require('./db');
 
 const parseTrustProxy = (value) => {
-  if (value === undefined || value === null || String(value).trim() === '') return 1;
-  const normalized = String(value).trim().toLowerCase();
+  const rawValue = value == null ? '' : String(value).trim();
+  if (rawValue === '') return 1;
+  const normalized = rawValue.toLowerCase();
   if (normalized === 'true') return true;
   if (normalized === 'false') return false;
-  const numericValue = Number.parseInt(normalized, 10);
-  if (!Number.isNaN(numericValue) && String(numericValue) === normalized) {
-    return numericValue;
+  if (/^\d+$/.test(normalized)) {
+    const hopCount = Number(normalized);
+    if (Number.isSafeInteger(hopCount)) {
+      return hopCount;
+    }
   }
-  return String(value).trim();
+  return rawValue;
 };
 
 const config = {
