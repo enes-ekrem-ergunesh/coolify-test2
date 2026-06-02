@@ -32,6 +32,7 @@ function initDb(db) {
       status TEXT NOT NULL DEFAULT 'manual',
       parser_source TEXT NOT NULL DEFAULT 'manual',
       parser_reason TEXT,
+      deleted_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -39,6 +40,14 @@ function initDb(db) {
 
     CREATE INDEX IF NOT EXISTS idx_entries_user_status ON entries(user_id, status, created_at DESC);
   `);
+
+  const entryColumns = db.prepare('PRAGMA table_info(entries)').all();
+  const hasDeletedAt = entryColumns.some((column) => column.name === 'deleted_at');
+  if (!hasDeletedAt) {
+    db.exec('ALTER TABLE entries ADD COLUMN deleted_at TEXT');
+  }
+
+  db.exec('CREATE INDEX IF NOT EXISTS idx_entries_user_deleted ON entries(user_id, deleted_at, created_at DESC)');
 }
 
 module.exports = {

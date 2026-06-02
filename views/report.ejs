@@ -42,6 +42,32 @@
           <% }) %>
         </div>
 
+        <section class="card" style="margin-bottom:1rem;">
+          <h2>Money at start and end of month</h2>
+          <ul class="list">
+            <% if (monthlyWallet.length === 0) { %>
+              <li class="item muted">No wallet movement available for this month.</li>
+            <% } %>
+            <% monthlyWallet.forEach((row) => { %>
+              <li class="item">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+                  <strong><%= row.currency %></strong>
+                  <div class="compact-grid" style="grid-template-columns:repeat(2,minmax(120px,1fr));max-width:360px;width:100%;">
+                    <div>
+                      <div class="muted" style="font-size:0.8rem;">Start money</div>
+                      <div class="number <%= row.startMoney >= 0 ? 'positive' : 'negative' %>"><%= row.startMoney %></div>
+                    </div>
+                    <div>
+                      <div class="muted" style="font-size:0.8rem;">End money</div>
+                      <div class="number <%= row.endMoney >= 0 ? 'positive' : 'negative' %>"><%= row.endMoney %></div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        </section>
+
         <div class="grid">
           <section class="card">
             <h2 style="color:#4ade80;">Income breakdown</h2>
