@@ -38,6 +38,15 @@ test('parses gift as expense when money is spent', () => {
   assert.equal(result.currency, 'USD');
 });
 
+test('parses loan repayment as expense', () => {
+  const result = heuristicParse('paid loan repayment 120 USD');
+  assert.equal(result.status, 'complete');
+  assert.equal(result.type, 'expense');
+  assert.equal(result.category, 'loan');
+  assert.equal(result.amount, 120);
+  assert.equal(result.currency, 'USD');
+});
+
 test('parses family spending as expense', () => {
   const result = heuristicParse('paid family support 200 USD');
   assert.equal(result.status, 'complete');

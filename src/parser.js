@@ -8,7 +8,7 @@ const KEYWORDS = {
     bonus: ['bonus', 'commission'],
     gift: ['gift', 'present', 'allowance'],
     investment: ['dividend', 'investment', 'interest', 'stock'],
-    loan: ['loan', 'borrowed', 'borrow'],
+    loan: ['received loan', 'borrowed', 'borrow', 'took loan', 'loan disbursement'],
   },
   expense: {
     groceries: ['market', 'grocery', 'groceries', 'supermarket'],
@@ -21,7 +21,7 @@ const KEYWORDS = {
     entertainment: ['movie', 'netflix', 'game', 'concert', 'cinema'],
     education: ['course', 'book', 'tuition', 'school', 'class'],
     travel: ['flight', 'hotel', 'trip', 'vacation', 'travel'],
-    loan: ['loan', 'repayment', 'installment', 'emi', 'debt'],
+    loan: ['loan payment', 'loan repayment', 'repayment', 'installment', 'emi', 'debt'],
     gift: ['gift', 'present'],
     family: ['family', 'parents', 'mom', 'mother', 'dad', 'father', 'child', 'children'],
     charity: ['charity', 'donation', 'donate', 'zakat'],
