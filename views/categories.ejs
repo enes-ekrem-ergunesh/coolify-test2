@@ -13,7 +13,7 @@
                 <div class="number <%= row.type === 'income' ? 'positive' : 'negative' %>"><%= row.total %> <span style="font-size:0.8rem;font-weight:400;color:#94a3b8;"><%= row.currency %></span></div>
               </div>
               <div class="bar-bg"><div class="bar-fill <%= row.type %>" style="width:<%= row.pct %>%;"></div></div>
-              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= row.count %> <%= row.count === 1 ? 'entry' : 'entries' %></div>
+              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= row.count %> <%= plural(row.count, 'entry', 'entries') %></div>
             </li>
           <% }) %>
         </ul>

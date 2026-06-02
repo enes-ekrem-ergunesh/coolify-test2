@@ -51,6 +51,7 @@ function createApp({ db, config }) {
     delete req.session.flash;
     res.locals.userId = req.session.userId || null;
     res.locals.pendingCount = 0;
+    res.locals.plural = (n, singular, pluralForm) => n === 1 ? singular : (pluralForm || `${singular}s`);
     if (req.session.userId) {
       const row = db.prepare("SELECT COUNT(*) AS cnt FROM entries WHERE user_id = ? AND status = 'manual'").get(req.session.userId);
       res.locals.pendingCount = row ? row.cnt : 0;
@@ -142,8 +143,6 @@ function createApp({ db, config }) {
     const stats = {
       total_income_count: statsRow ? statsRow.total_income_count : 0,
       total_expense_count: statsRow ? statsRow.total_expense_count : 0,
-      income_count: statsRow ? statsRow.total_income_count : 0,
-      expense_count: statsRow ? statsRow.total_expense_count : 0,
       top_expense_category: topCatRow ? topCatRow.category : null,
     };
 

@@ -56,7 +56,7 @@
                     <strong><%= row.category %></strong>
                     <span class="positive"><%= row.total %> <%= row.currency %></span>
                   </div>
-                  <div class="muted" style="font-size:0.8rem;"><%= row.count %> <%= row.count === 1 ? 'entry' : 'entries' %></div>
+                  <div class="muted" style="font-size:0.8rem;"><%= row.count %> <%= plural(row.count, 'entry', 'entries') %></div>
                   <div class="bar-bg"><div class="bar-fill income" style="width:<%= row.pct %>%;"></div></div>
                 </li>
               <% }) %>
@@ -76,7 +76,7 @@
                     <strong><%= row.category %></strong>
                     <span class="negative"><%= row.total %> <%= row.currency %></span>
                   </div>
-                  <div class="muted" style="font-size:0.8rem;"><%= row.count %> <%= row.count === 1 ? 'entry' : 'entries' %></div>
+                  <div class="muted" style="font-size:0.8rem;"><%= row.count %> <%= plural(row.count, 'entry', 'entries') %></div>
                   <div class="bar-bg"><div class="bar-fill expense" style="width:<%= row.pct %>%;"></div></div>
                 </li>
               <% }) %>
