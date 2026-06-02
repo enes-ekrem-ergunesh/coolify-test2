@@ -17,6 +17,8 @@ function initDb(db) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
+      is_verified INTEGER NOT NULL DEFAULT 0,
+      verified_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -47,7 +49,18 @@ function initDb(db) {
     db.exec('ALTER TABLE entries ADD COLUMN deleted_at TEXT');
   }
 
+  const userColumns = db.prepare('PRAGMA table_info(users)').all();
+  const hasIsVerified = userColumns.some((column) => column.name === 'is_verified');
+  if (!hasIsVerified) {
+    db.exec('ALTER TABLE users ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0');
+  }
+  const hasVerifiedAt = userColumns.some((column) => column.name === 'verified_at');
+  if (!hasVerifiedAt) {
+    db.exec('ALTER TABLE users ADD COLUMN verified_at TEXT');
+  }
+
   db.exec('CREATE INDEX IF NOT EXISTS idx_entries_user_deleted ON entries(user_id, deleted_at, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_users_verification ON users(is_verified, created_at DESC)');
 }
 
 module.exports = {

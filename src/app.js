@@ -22,6 +22,36 @@ function createApp({ db, config }) {
     standardHeaders: 'draft-8',
     legacyHeaders: false,
   });
+  const adminUsername = 'admin';
+  const secureStringEqual = (left, right) => {
+    const leftBuffer = Buffer.from(String(left || ''));
+    const rightBuffer = Buffer.from(String(right || ''));
+    if (leftBuffer.length !== rightBuffer.length) return false;
+    return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+  };
+  const renderAdminDashboard = (req, res) => {
+    const pendingUsers = db
+      .prepare(
+        `SELECT id, email, created_at
+         FROM users
+         WHERE is_verified = 0
+         ORDER BY created_at ASC, id ASC`,
+      )
+      .all();
+    const verifiedUsers = db
+      .prepare(
+        `SELECT id, email, created_at, verified_at
+         FROM users
+         WHERE is_verified = 1
+         ORDER BY verified_at DESC, id DESC
+         LIMIT 100`,
+      )
+      .all();
+    return res.render('admin', {
+      pendingUsers,
+      verifiedUsers,
+    });
+  };
 
   app.disable('x-powered-by');
   app.set('view engine', 'ejs');
@@ -50,6 +80,7 @@ function createApp({ db, config }) {
     res.locals.csrfToken = req.session.csrfToken;
     delete req.session.flash;
     res.locals.userId = req.session.userId || null;
+    res.locals.isAdmin = req.session.isAdmin === true;
     res.locals.pendingCount = 0;
     res.locals.plural = (n, singular, pluralForm) => n === 1 ? singular : (pluralForm || `${singular}s`);
     if (req.session.userId) {
@@ -87,6 +118,9 @@ function createApp({ db, config }) {
   });
 
   app.get('/', (req, res) => {
+    if (req.session.isAdmin) {
+      return renderAdminDashboard(req, res);
+    }
     if (!req.session.userId) {
       return res.render('auth', { email: '' });
     }
@@ -169,6 +203,14 @@ function createApp({ db, config }) {
       recentEntries,
       activePage: 'home',
     });
+  });
+
+  app.get('/admin', (req, res) => {
+    if (!req.session.isAdmin) {
+      req.session.flash = { type: 'error', message: 'Admin access is required.' };
+      return res.status(403).redirect('/');
+    }
+    return renderAdminDashboard(req, res);
   });
 
   app.get('/incomes', (req, res) => {
@@ -372,25 +414,72 @@ function createApp({ db, config }) {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const result = db.prepare('INSERT INTO users(email, password_hash) VALUES(?, ?)').run(email, passwordHash);
-    req.session.userId = result.lastInsertRowid;
-    req.session.flash = { type: 'success', message: 'Welcome! Your account is ready.' };
+    db.prepare('INSERT INTO users(email, password_hash, is_verified) VALUES(?, ?, 0)').run(email, passwordHash);
+    req.session.userId = null;
+    req.session.isAdmin = false;
+    req.session.flash = { type: 'warning', message: 'Registration received. Please wait for admin verification before signing in.' };
     return res.redirect('/');
+  });
+
+  app.post('/admin/login', authLimiter, (req, res) => {
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '');
+
+    if (username !== adminUsername || !secureStringEqual(password, config.adminPassword)) {
+      req.session.flash = { type: 'error', message: 'Invalid admin credentials.' };
+      return res.status(401).redirect('/');
+    }
+
+    req.session.userId = null;
+    req.session.isAdmin = true;
+    req.session.flash = { type: 'success', message: 'Admin signed in successfully.' };
+    return res.redirect('/admin');
   });
 
   app.post('/login', authLimiter, async (req, res) => {
     const email = String(req.body.email || '').trim().toLowerCase();
     const password = String(req.body.password || '');
-    const user = db.prepare('SELECT id, password_hash FROM users WHERE email = ?').get(email);
+    const user = db.prepare('SELECT id, password_hash, is_verified FROM users WHERE email = ?').get(email);
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       req.session.flash = { type: 'error', message: 'Invalid email or password.' };
       return res.status(401).redirect('/');
     }
+    if (user.is_verified !== 1) {
+      req.session.flash = { type: 'warning', message: 'Your account is pending admin verification.' };
+      return res.status(403).redirect('/');
+    }
 
     req.session.userId = user.id;
+    req.session.isAdmin = false;
     req.session.flash = { type: 'success', message: 'Signed in successfully.' };
     return res.redirect('/');
+  });
+
+  app.post('/admin/users/:id/verify', (req, res) => {
+    if (!req.session.isAdmin) {
+      req.session.flash = { type: 'error', message: 'Admin access is required.' };
+      return res.status(403).redirect('/');
+    }
+
+    const userId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      req.session.flash = { type: 'error', message: 'Invalid user.' };
+      return res.status(400).redirect('/admin');
+    }
+
+    const result = db
+      .prepare(
+        `UPDATE users
+         SET is_verified = 1, verified_at = CURRENT_TIMESTAMP
+         WHERE id = ? AND is_verified = 0`,
+      )
+      .run(userId);
+
+    req.session.flash = result.changes > 0
+      ? { type: 'success', message: 'User verified successfully.' }
+      : { type: 'warning', message: 'User not found or already verified.' };
+    return res.redirect('/admin');
   });
 
   app.post('/logout', (req, res) => {
