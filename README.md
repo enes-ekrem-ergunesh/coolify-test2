@@ -51,6 +51,7 @@ Required or useful environment variables used by this app:
 - `APP_PORT` *(optional, default: `8542`)* — host port exposed on `127.0.0.1`
 - `SESSION_SECRET` *(required)* — session signing secret; set a long random value before starting the app
 - `ADMIN_PASSWORD` *(required)* — admin login password for username `admin`
+- `TRUST_PROXY` *(optional, default: `1`)* — Express `trust proxy` value used for correct client IP detection behind a reverse proxy
 - `DATABASE_PATH` *(optional, default in container: `/app/data/budget.db`)* — SQLite database path
 - `OPENAI_API_KEY` *(optional but required for AI parsing)* — OpenAI API key
 - `OPENAI_MODEL` *(optional, default: `gpt-4o-mini`)* — OpenAI model name

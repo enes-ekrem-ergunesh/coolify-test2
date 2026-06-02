@@ -1,11 +1,27 @@
 const { createApp } = require('./app');
 const { openDatabase, initDb } = require('./db');
 
+const parseTrustProxy = (value) => {
+  const rawValue = value == null ? '' : String(value).trim();
+  if (rawValue === '') return 1;
+  const normalized = rawValue.toLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
+  if (/^\d+$/.test(normalized)) {
+    const hopCount = Number(normalized);
+    if (Number.isSafeInteger(hopCount)) {
+      return hopCount;
+    }
+  }
+  return rawValue;
+};
+
 const config = {
   port: Number.parseInt(process.env.PORT || '3000', 10),
   databasePath: process.env.DATABASE_PATH || './data/budget.db',
   sessionSecret: process.env.SESSION_SECRET,
   adminPassword: process.env.ADMIN_PASSWORD || '',
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   secureCookies: process.env.COOKIE_SECURE === 'true',
   openAiApiKey: process.env.OPENAI_API_KEY || '',
   openAiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
