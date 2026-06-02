@@ -1,11 +1,24 @@
 const { createApp } = require('./app');
 const { openDatabase, initDb } = require('./db');
 
+const parseTrustProxy = (value) => {
+  if (value === undefined || value === null || String(value).trim() === '') return 1;
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
+  const numericValue = Number.parseInt(normalized, 10);
+  if (!Number.isNaN(numericValue) && String(numericValue) === normalized) {
+    return numericValue;
+  }
+  return String(value).trim();
+};
+
 const config = {
   port: Number.parseInt(process.env.PORT || '3000', 10),
   databasePath: process.env.DATABASE_PATH || './data/budget.db',
   sessionSecret: process.env.SESSION_SECRET,
   adminPassword: process.env.ADMIN_PASSWORD || '',
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   secureCookies: process.env.COOKIE_SECURE === 'true',
   openAiApiKey: process.env.OPENAI_API_KEY || '',
   openAiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
