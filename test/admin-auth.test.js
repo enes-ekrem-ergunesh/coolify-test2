@@ -8,7 +8,7 @@ const { openDatabase, initDb } = require('../src/db');
 
 test('admin login accepts password when env value has trailing newline', async (t) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'coolify-admin-auth-'));
-  const db = openDatabase(path.join(tempDir, 'budget.db'));
+  const db = openDatabase(path.join(tempDir, 'admin-auth-test.db'));
   initDb(db);
   const app = createApp({
     db,
