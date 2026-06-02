@@ -22,15 +22,16 @@ A small Docker Compose app for personal budget tracking with:
 
 ## Supported categories
 
-### Income types (5)
+### Income types (6)
 
 - salary
 - freelance
 - bonus
 - gift
 - investment
+- loan
 
-### Expense types (10)
+### Expense types (14)
 
 - groceries
 - dining
@@ -42,6 +43,10 @@ A small Docker Compose app for personal budget tracking with:
 - entertainment
 - education
 - travel
+- loan
+- gift
+- family
+- charity
 
 ## Environment variables
 
