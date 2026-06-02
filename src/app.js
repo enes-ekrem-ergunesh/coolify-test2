@@ -23,6 +23,7 @@ function createApp({ db, config }) {
     legacyHeaders: false,
   });
   const adminUsername = 'admin';
+  const normalizedAdminPassword = String(config.adminPassword || '').replace(/[\r\n]+$/, '');
   const secureStringEqual = (left, right) => {
     const leftBuffer = Buffer.from(String(left || ''));
     const rightBuffer = Buffer.from(String(right || ''));
@@ -427,7 +428,7 @@ function createApp({ db, config }) {
     const username = String(req.body.username || '').trim();
     const password = String(req.body.password || '');
 
-    if (username !== adminUsername || !secureStringEqual(password, config.adminPassword)) {
+    if (!normalizedAdminPassword || username !== adminUsername || !secureStringEqual(password, normalizedAdminPassword)) {
       req.session.flash = { type: 'error', message: 'Invalid admin credentials.' };
       return res.status(401).redirect('/');
     }
