@@ -52,6 +52,12 @@ function createApp({ db, config }) {
       verifiedUsers,
     });
   };
+  const requireAdmin = (req, res) => {
+    if (req.session.isAdmin) return true;
+    req.session.flash = { type: 'error', message: 'Admin access is required.' };
+    res.status(403).redirect('/');
+    return false;
+  };
 
   app.disable('x-powered-by');
   app.set('view engine', 'ejs');
@@ -206,10 +212,7 @@ function createApp({ db, config }) {
   });
 
   app.get('/admin', (req, res) => {
-    if (!req.session.isAdmin) {
-      req.session.flash = { type: 'error', message: 'Admin access is required.' };
-      return res.status(403).redirect('/');
-    }
+    if (!requireAdmin(req, res)) return undefined;
     return renderAdminDashboard(req, res);
   });
 
@@ -415,8 +418,6 @@ function createApp({ db, config }) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     db.prepare('INSERT INTO users(email, password_hash, is_verified) VALUES(?, ?, 0)').run(email, passwordHash);
-    req.session.userId = null;
-    req.session.isAdmin = false;
     req.session.flash = { type: 'warning', message: 'Registration received. Please wait for admin verification before signing in.' };
     return res.redirect('/');
   });
@@ -430,10 +431,15 @@ function createApp({ db, config }) {
       return res.status(401).redirect('/');
     }
 
-    req.session.userId = null;
-    req.session.isAdmin = true;
-    req.session.flash = { type: 'success', message: 'Admin signed in successfully.' };
-    return res.redirect('/admin');
+    return req.session.regenerate((error) => {
+      if (error) {
+        req.session.flash = { type: 'error', message: 'Unable to create admin session.' };
+        return res.status(500).redirect('/');
+      }
+      req.session.isAdmin = true;
+      req.session.flash = { type: 'success', message: 'Admin signed in successfully.' };
+      return res.redirect('/admin');
+    });
   });
 
   app.post('/login', authLimiter, async (req, res) => {
@@ -450,17 +456,19 @@ function createApp({ db, config }) {
       return res.status(403).redirect('/');
     }
 
-    req.session.userId = user.id;
-    req.session.isAdmin = false;
-    req.session.flash = { type: 'success', message: 'Signed in successfully.' };
-    return res.redirect('/');
+    return req.session.regenerate((error) => {
+      if (error) {
+        req.session.flash = { type: 'error', message: 'Unable to create session.' };
+        return res.status(500).redirect('/');
+      }
+      req.session.userId = user.id;
+      req.session.flash = { type: 'success', message: 'Signed in successfully.' };
+      return res.redirect('/');
+    });
   });
 
   app.post('/admin/users/:id/verify', (req, res) => {
-    if (!req.session.isAdmin) {
-      req.session.flash = { type: 'error', message: 'Admin access is required.' };
-      return res.status(403).redirect('/');
-    }
+    if (!requireAdmin(req, res)) return undefined;
 
     const userId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(userId) || userId <= 0) {

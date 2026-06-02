@@ -53,10 +53,12 @@ function initDb(db) {
   const hasIsVerified = userColumns.some((column) => column.name === 'is_verified');
   if (!hasIsVerified) {
     db.exec('ALTER TABLE users ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0');
+    db.exec('UPDATE users SET is_verified = 1 WHERE is_verified = 0');
   }
   const hasVerifiedAt = userColumns.some((column) => column.name === 'verified_at');
   if (!hasVerifiedAt) {
     db.exec('ALTER TABLE users ADD COLUMN verified_at TEXT');
+    db.exec('UPDATE users SET verified_at = created_at WHERE is_verified = 1 AND verified_at IS NULL');
   }
 
   db.exec('CREATE INDEX IF NOT EXISTS idx_entries_user_deleted ON entries(user_id, deleted_at, created_at DESC)');
