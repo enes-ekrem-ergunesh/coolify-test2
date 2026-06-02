@@ -1,0 +1,88 @@
+<%- include('_header', { activePage: 'report' }) %>
+
+      <section class="card" style="margin-bottom:1rem;">
+        <h2>Monthly report</h2>
+        <form method="get" action="/report" style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;">
+            <label for="month" class="muted" style="display:block;margin-bottom:0.4rem;">Select month</label>
+            <select id="month" name="month" style="margin-bottom:0;">
+              <% availableMonths.forEach((m) => { %>
+                <option value="<%= m %>" <%= m === selectedMonth ? 'selected' : '' %>><%= m %></option>
+              <% }) %>
+            </select>
+          </div>
+          <button type="submit" style="margin-bottom:0;">View</button>
+        </form>
+      </section>
+
+      <% if (!selectedMonth || availableMonths.length === 0) { %>
+        <div class="card"><p class="muted">No data available yet. Add entries to generate reports.</p></div>
+      <% } else { %>
+        <div class="kpi-grid" style="margin-bottom:1rem;">
+          <% monthlySummary.forEach((row) => { %>
+            <div class="card kpi">
+              <div class="kpi-number positive"><%= row.income_total %></div>
+              <div class="kpi-label">Income (<%= row.currency %>)</div>
+            </div>
+            <div class="card kpi">
+              <div class="kpi-number negative"><%= row.expense_total %></div>
+              <div class="kpi-label">Expense (<%= row.currency %>)</div>
+            </div>
+            <div class="card kpi">
+              <% const net = (row.income_total - row.expense_total).toFixed(2); %>
+              <div class="kpi-number <%= parseFloat(net) >= 0 ? 'positive' : 'negative' %>"><%= net %></div>
+              <div class="kpi-label">Net (<%= row.currency %>)</div>
+            </div>
+            <% if (row.income_total > 0) { %>
+            <div class="card kpi">
+              <div class="kpi-number" style="color:#facc15;"><%= Math.round((1 - row.expense_total / row.income_total) * 100) %>%</div>
+              <div class="kpi-label">Savings rate (<%= row.currency %>)</div>
+            </div>
+            <% } %>
+          <% }) %>
+        </div>
+
+        <div class="grid">
+          <section class="card">
+            <h2 style="color:#4ade80;">Income breakdown</h2>
+            <ul class="list">
+              <% const incomeRows = categoryBreakdown.filter(r => r.type === 'income'); %>
+              <% if (incomeRows.length === 0) { %>
+                <li class="item muted">No income in this month.</li>
+              <% } %>
+              <% incomeRows.forEach((row) => { %>
+                <li class="item">
+                  <div style="display:flex;justify-content:space-between;">
+                    <strong><%= row.category %></strong>
+                    <span class="positive"><%= row.total %> <%= row.currency %></span>
+                  </div>
+                  <div class="muted" style="font-size:0.8rem;"><%= row.count %> <%= plural(row.count, 'entry', 'entries') %></div>
+                  <div class="bar-bg"><div class="bar-fill income" style="width:<%= row.pct %>%;"></div></div>
+                </li>
+              <% }) %>
+            </ul>
+          </section>
+
+          <section class="card">
+            <h2 style="color:#f87171;">Expense breakdown</h2>
+            <ul class="list">
+              <% const expenseRows = categoryBreakdown.filter(r => r.type === 'expense'); %>
+              <% if (expenseRows.length === 0) { %>
+                <li class="item muted">No expenses in this month.</li>
+              <% } %>
+              <% expenseRows.forEach((row) => { %>
+                <li class="item">
+                  <div style="display:flex;justify-content:space-between;">
+                    <strong><%= row.category %></strong>
+                    <span class="negative"><%= row.total %> <%= row.currency %></span>
+                  </div>
+                  <div class="muted" style="font-size:0.8rem;"><%= row.count %> <%= plural(row.count, 'entry', 'entries') %></div>
+                  <div class="bar-bg"><div class="bar-fill expense" style="width:<%= row.pct %>%;"></div></div>
+                </li>
+              <% }) %>
+            </ul>
+          </section>
+        </div>
+      <% } %>
+
+<%- include('_footer') %>

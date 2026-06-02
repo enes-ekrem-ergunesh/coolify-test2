@@ -1,0 +1,57 @@
+<%- include('_header', { activePage: 'review' }) %>
+
+      <section class="card">
+        <h2>Manual review queue</h2>
+        <ul class="list">
+          <% if (manualEntries.length === 0) { %>
+            <li class="item muted">Nothing needs manual review right now.</li>
+          <% } %>
+          <% manualEntries.forEach((entry) => { %>
+            <li class="item">
+              <p style="margin:0 0 0.25rem;"><strong>Message:</strong> <%= entry.message %></p>
+              <p class="muted" style="margin:0 0 0.75rem;font-size:0.85rem;"><%= entry.parser_reason || 'Needs manual confirmation.' %></p>
+              <form method="post" action="/entries/<%= entry.id %>/resolve">
+                <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                <div class="compact-grid">
+                  <div>
+                    <label for="type-<%= entry.id %>">Type</label>
+                    <select id="type-<%= entry.id %>" name="type">
+                      <option value="expense" <%= entry.type === 'expense' ? 'selected' : '' %>>Expense</option>
+                      <option value="income" <%= entry.type === 'income' ? 'selected' : '' %>>Income</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="amount-<%= entry.id %>">Amount</label>
+                    <input id="amount-<%= entry.id %>" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" value="<%= entry.amount || '' %>" required />
+                  </div>
+                  <div>
+                    <label for="currency-<%= entry.id %>">Currency</label>
+                    <input id="currency-<%= entry.id %>" name="currency" value="<%= entry.currency || 'USD' %>" maxlength="6" required />
+                  </div>
+                </div>
+                <label for="category-<%= entry.id %>">Category</label>
+                <select id="category-<%= entry.id %>" name="category" required>
+                  <option value="">Select a category</option>
+                  <% incomeCategories.forEach((category) => { %>
+                    <option value="<%= category %>" <%= entry.category === category ? 'selected' : '' %>><%= category %> (income)</option>
+                  <% }) %>
+                  <% expenseCategories.forEach((category) => { %>
+                    <option value="<%= category %>" <%= entry.category === category ? 'selected' : '' %>><%= category %> (expense)</option>
+                  <% }) %>
+                </select>
+                <label for="description-<%= entry.id %>">Description</label>
+                <input id="description-<%= entry.id %>" name="description" value="<%= entry.description || entry.message %>" required />
+                <div class="item-actions">
+                  <button type="submit">Finalize entry</button>
+                </div>
+              </form>
+              <form method="post" action="/entries/<%= entry.id %>/dismiss" style="margin-top:0.5rem;">
+                <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                <button type="submit" class="danger">Dismiss</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+
+<%- include('_footer') %>

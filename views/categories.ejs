@@ -1,0 +1,22 @@
+<%- include('_header', { activePage: 'categories' }) %>
+
+      <section class="card">
+        <h2>Category totals</h2>
+        <ul class="list">
+          <% if (categoryTotals.length === 0) { %>
+            <li class="item muted">No analytics yet. Add entries to see category breakdowns.</li>
+          <% } %>
+          <% categoryTotals.forEach((row) => { %>
+            <li class="item">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><span class="pill <%= row.type %>"><%= row.type %></span> <strong><%= row.category %></strong></div>
+                <div class="number <%= row.type === 'income' ? 'positive' : 'negative' %>"><%= row.total %> <span style="font-size:0.8rem;font-weight:400;color:#94a3b8;"><%= row.currency %></span></div>
+              </div>
+              <div class="bar-bg"><div class="bar-fill <%= row.type %>" style="width:<%= row.pct %>%;"></div></div>
+              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= row.count %> <%= plural(row.count, 'entry', 'entries') %></div>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+
+<%- include('_footer') %>

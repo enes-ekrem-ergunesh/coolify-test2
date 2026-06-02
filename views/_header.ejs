@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Budget Chat</title>
+    <style>
+      :root { color-scheme: light dark; font-family: Arial, sans-serif; }
+      body { margin: 0; background: #0f172a; color: #e2e8f0; }
+      main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+      h1 { margin: 0 0 0.25rem 0; }
+      h2 { margin-top: 0; }
+      .topbar { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+      .nav { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+      .nav-link { padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; color: #94a3b8; font-weight: 600; transition: background 0.15s; }
+      .nav-link:hover { background: #1e293b; color: #e2e8f0; }
+      .nav-link.active { background: #2563eb; color: white; }
+      .badge { display: inline-block; background: #dc2626; color: white; border-radius: 999px; padding: 0 0.45rem; font-size: 0.75rem; margin-left: 0.3rem; vertical-align: middle; }
+      .summary-grid, .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+      .kpi-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 1rem; }
+      .card { background: #111827; border-radius: 16px; padding: 1.25rem; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.25); }
+      .card.kpi { text-align: center; }
+      textarea, input, select { width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid #334155; box-sizing: border-box; margin-bottom: 0.8rem; background: #1e293b; color: #e2e8f0; }
+      button { background: #2563eb; color: white; border: 0; border-radius: 10px; padding: 0.75rem 1rem; cursor: pointer; font-weight: 700; }
+      button.ghost { background: transparent; border: 1px solid #475569; color: #e2e8f0; }
+      button.danger { background: transparent; border: 1px solid #7f1d1d; color: #fca5a5; }
+      .flash { padding: 0.85rem 1rem; border-radius: 12px; margin-bottom: 1rem; }
+      .flash.error { background: #7f1d1d; }
+      .flash.success { background: #14532d; }
+      .flash.warning { background: #78350f; }
+      .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+      .item { border: 1px solid #1e293b; border-radius: 14px; padding: 0.9rem; }
+      .muted { color: #94a3b8; }
+      .pill { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.8rem; }
+      .pill.income { background: #14532d; }
+      .pill.expense { background: #7f1d1d; }
+      .pill.default { background: #1d4ed8; }
+      .number { font-size: 1.3rem; font-weight: 700; }
+      .kpi-number { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+      .kpi-label { color: #94a3b8; font-size: 0.85rem; margin-top: 0.25rem; }
+      .compact-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+      .item-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+      .positive { color: #4ade80; }
+      .negative { color: #f87171; }
+      .bar-bg { background: #1e293b; border-radius: 4px; height: 8px; margin-top: 0.4rem; overflow: hidden; }
+      .bar-fill { height: 100%; border-radius: 4px; }
+      .bar-fill.income { background: #16a34a; }
+      .bar-fill.expense { background: #dc2626; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <div>
+          <h1>Budget Chat</h1>
+          <p class="muted" style="margin:0;font-size:0.85rem;">Personal budget tracker</p>
+        </div>
+        <form method="post" action="/logout">
+          <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+          <button class="ghost" type="submit">Logout</button>
+        </form>
+      </div>
+      <nav class="nav">
+        <a href="/" class="nav-link <%= activePage === 'home' ? 'active' : '' %>">Dashboard</a>
+        <a href="/incomes" class="nav-link <%= activePage === 'incomes' ? 'active' : '' %>">Incomes</a>
+        <a href="/expenses" class="nav-link <%= activePage === 'expenses' ? 'active' : '' %>">Expenses</a>
+        <a href="/categories" class="nav-link <%= activePage === 'categories' ? 'active' : '' %>">Categories</a>
+        <a href="/review" class="nav-link <%= activePage === 'review' ? 'active' : '' %>">Review<% if (pendingCount > 0) { %><span class="badge"><%= pendingCount %></span><% } %></a>
+        <a href="/report" class="nav-link <%= activePage === 'report' ? 'active' : '' %>">Report</a>
+      </nav>
+      <% if (flash) { %>
+        <div class="flash <%= flash.type %>"><%= flash.message %></div>
+      <% } %>
