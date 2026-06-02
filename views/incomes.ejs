@@ -1,0 +1,19 @@
+<%- include('_header', { activePage: 'incomes' }) %>
+
+      <section class="card">
+        <h2>Income entries</h2>
+        <ul class="list">
+          <% if (entries.length === 0) { %>
+            <li class="item muted">No income entries yet.</li>
+          <% } %>
+          <% entries.forEach((entry) => { %>
+            <li class="item">
+              <div><span class="pill income">income</span> <strong><%= entry.amount %> <%= entry.currency %></strong> in <%= entry.category %></div>
+              <div><%= entry.description %></div>
+              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= entry.created_at %></div>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+
+<%- include('_footer') %>

@@ -50,6 +50,11 @@ function createApp({ db, config }) {
     res.locals.csrfToken = req.session.csrfToken;
     delete req.session.flash;
     res.locals.userId = req.session.userId || null;
+    res.locals.pendingCount = 0;
+    if (req.session.userId) {
+      const row = db.prepare("SELECT COUNT(*) AS cnt FROM entries WHERE user_id = ? AND status = 'manual'").get(req.session.userId);
+      res.locals.pendingCount = row ? row.cnt : 0;
+    }
     next();
   });
 
@@ -101,6 +106,47 @@ function createApp({ db, config }) {
         balance: Number((row.income_total - row.expense_total).toFixed(2)),
       }));
 
+    const thisMonth = db
+      .prepare(
+        `SELECT currency,
+                ROUND(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 2) AS month_income,
+                ROUND(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 2) AS month_expense
+         FROM entries
+         WHERE user_id = ? AND status = 'complete'
+           AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
+         GROUP BY currency
+         ORDER BY currency ASC`,
+      )
+      .all(req.session.userId);
+
+    const statsRow = db
+      .prepare(
+        `SELECT
+           COUNT(CASE WHEN type = 'income' THEN 1 END) AS total_income_count,
+           COUNT(CASE WHEN type = 'expense' THEN 1 END) AS total_expense_count
+         FROM entries
+         WHERE user_id = ? AND status = 'complete'`,
+      )
+      .get(req.session.userId);
+
+    const topCatRow = db
+      .prepare(
+        `SELECT category FROM entries
+         WHERE user_id = ? AND status = 'complete' AND type = 'expense'
+         GROUP BY category
+         ORDER BY SUM(amount) DESC
+         LIMIT 1`,
+      )
+      .get(req.session.userId);
+
+    const stats = {
+      total_income_count: statsRow ? statsRow.total_income_count : 0,
+      total_expense_count: statsRow ? statsRow.total_expense_count : 0,
+      income_count: statsRow ? statsRow.total_income_count : 0,
+      expense_count: statsRow ? statsRow.total_expense_count : 0,
+      top_expense_category: topCatRow ? topCatRow.category : null,
+    };
+
     const recentEntries = db
       .prepare(
         `SELECT id, message, type, category, amount, currency, description, status, parser_source, created_at
@@ -111,6 +157,79 @@ function createApp({ db, config }) {
       )
       .all(req.session.userId);
 
+    return res.render('dashboard', {
+      balances,
+      thisMonth,
+      stats,
+      recentEntries,
+      activePage: 'home',
+    });
+  });
+
+  app.get('/incomes', (req, res) => {
+    if (!req.session.userId) return res.status(401).redirect('/');
+
+    const entries = db
+      .prepare(
+        `SELECT id, type, category, amount, currency, description, created_at
+         FROM entries
+         WHERE user_id = ? AND status = 'complete' AND type = 'income'
+         ORDER BY created_at DESC, id DESC`,
+      )
+      .all(req.session.userId);
+
+    return res.render('incomes', { entries, activePage: 'incomes' });
+  });
+
+  app.get('/expenses', (req, res) => {
+    if (!req.session.userId) return res.status(401).redirect('/');
+
+    const entries = db
+      .prepare(
+        `SELECT id, type, category, amount, currency, description, created_at
+         FROM entries
+         WHERE user_id = ? AND status = 'complete' AND type = 'expense'
+         ORDER BY created_at DESC, id DESC`,
+      )
+      .all(req.session.userId);
+
+    return res.render('expenses', { entries, activePage: 'expenses' });
+  });
+
+  app.get('/categories', (req, res) => {
+    if (!req.session.userId) return res.status(401).redirect('/');
+
+    const rawTotals = db
+      .prepare(
+        `SELECT type, category, currency, ROUND(SUM(amount), 2) AS total, COUNT(*) AS count
+         FROM entries
+         WHERE user_id = ? AND status = 'complete'
+         GROUP BY type, category, currency
+         ORDER BY total DESC, category ASC`,
+      )
+      .all(req.session.userId);
+
+    // Compute percentage relative to max within type+currency for a progress bar
+    const maxByTypeCurrency = {};
+    for (const row of rawTotals) {
+      const key = `${row.type}:${row.currency}`;
+      if (!maxByTypeCurrency[key] || row.total > maxByTypeCurrency[key]) {
+        maxByTypeCurrency[key] = row.total;
+      }
+    }
+    const categoryTotals = rawTotals.map((row) => ({
+      ...row,
+      pct: maxByTypeCurrency[`${row.type}:${row.currency}`]
+        ? Math.round((row.total / maxByTypeCurrency[`${row.type}:${row.currency}`]) * 100)
+        : 0,
+    }));
+
+    return res.render('categories', { categoryTotals, activePage: 'categories' });
+  });
+
+  app.get('/review', (req, res) => {
+    if (!req.session.userId) return res.status(401).redirect('/');
+
     const manualEntries = db
       .prepare(
         `SELECT id, message, type, category, amount, currency, description, parser_reason, created_at
@@ -120,23 +239,77 @@ function createApp({ db, config }) {
       )
       .all(req.session.userId);
 
-    const categoryTotals = db
-      .prepare(
-        `SELECT type, category, currency, ROUND(SUM(amount), 2) AS total
-         FROM entries
-         WHERE user_id = ? AND status = 'complete'
-         GROUP BY type, category, currency
-         ORDER BY total DESC, category ASC`,
-      )
-      .all(req.session.userId);
-
-    return res.render('dashboard', {
-      balances,
-      recentEntries,
+    return res.render('review', {
       manualEntries,
-      categoryTotals,
       incomeCategories: INCOME_CATEGORIES,
       expenseCategories: EXPENSE_CATEGORIES,
+      activePage: 'review',
+    });
+  });
+
+  app.get('/report', (req, res) => {
+    if (!req.session.userId) return res.status(401).redirect('/');
+
+    const availableMonths = db
+      .prepare(
+        `SELECT DISTINCT strftime('%Y-%m', created_at) AS month
+         FROM entries
+         WHERE user_id = ? AND status = 'complete'
+         ORDER BY month DESC`,
+      )
+      .all(req.session.userId)
+      .map((r) => r.month);
+
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const rawMonth = String(req.query.month || '').trim();
+    const selectedMonth = /^\d{4}-\d{2}$/.test(rawMonth)
+      ? rawMonth
+      : (availableMonths[0] || currentMonth);
+
+    const monthlySummary = db
+      .prepare(
+        `SELECT currency,
+                ROUND(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 2) AS income_total,
+                ROUND(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 2) AS expense_total
+         FROM entries
+         WHERE user_id = ? AND status = 'complete'
+           AND strftime('%Y-%m', created_at) = ?
+         GROUP BY currency
+         ORDER BY currency ASC`,
+      )
+      .all(req.session.userId, selectedMonth);
+
+    const rawBreakdown = db
+      .prepare(
+        `SELECT type, category, currency, ROUND(SUM(amount), 2) AS total, COUNT(*) AS count
+         FROM entries
+         WHERE user_id = ? AND status = 'complete'
+           AND strftime('%Y-%m', created_at) = ?
+         GROUP BY type, category, currency
+         ORDER BY type ASC, total DESC`,
+      )
+      .all(req.session.userId, selectedMonth);
+
+    const maxByTypeCurrency = {};
+    for (const row of rawBreakdown) {
+      const key = `${row.type}:${row.currency}`;
+      if (!maxByTypeCurrency[key] || row.total > maxByTypeCurrency[key]) {
+        maxByTypeCurrency[key] = row.total;
+      }
+    }
+    const categoryBreakdown = rawBreakdown.map((row) => ({
+      ...row,
+      pct: maxByTypeCurrency[`${row.type}:${row.currency}`]
+        ? Math.round((row.total / maxByTypeCurrency[`${row.type}:${row.currency}`]) * 100)
+        : 0,
+    }));
+
+    return res.render('report', {
+      availableMonths,
+      selectedMonth,
+      monthlySummary,
+      categoryBreakdown,
+      activePage: 'report',
     });
   });
 
@@ -259,7 +432,27 @@ function createApp({ db, config }) {
     ).run(type, category, amount, currency, description, entryId, req.session.userId);
 
     req.session.flash = { type: 'success', message: 'Entry finalized successfully.' };
-    return res.redirect('/');
+    return res.redirect('/review');
+  });
+
+  app.post('/entries/:id/dismiss', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).redirect('/');
+    }
+
+    const entryId = Number.parseInt(req.params.id, 10);
+    const existing = db
+      .prepare("SELECT id FROM entries WHERE id = ? AND user_id = ? AND status = 'manual'")
+      .get(entryId, req.session.userId);
+
+    if (!existing) {
+      req.session.flash = { type: 'error', message: 'Entry not found.' };
+      return res.status(404).redirect('/review');
+    }
+
+    db.prepare('DELETE FROM entries WHERE id = ? AND user_id = ?').run(entryId, req.session.userId);
+    req.session.flash = { type: 'success', message: 'Entry dismissed.' };
+    return res.redirect('/review');
   });
 
   return app;

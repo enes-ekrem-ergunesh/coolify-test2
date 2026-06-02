@@ -1,155 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Budget Chat</title>
-    <style>
-      :root { color-scheme: light dark; font-family: Arial, sans-serif; }
-      body { margin: 0; background: #0f172a; color: #e2e8f0; }
-      main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
-      .topbar, .summary-grid, .grid { display: grid; gap: 1rem; }
-      .topbar { grid-template-columns: 1fr auto; align-items: center; }
-      .summary-grid, .grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-      .card { background: #111827; border-radius: 16px; padding: 1.25rem; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.25); }
-      textarea, input, select { width: 100%; padding: 0.8rem; border-radius: 10px; border: 1px solid #334155; box-sizing: border-box; margin-bottom: 0.8rem; }
-      button { background: #2563eb; color: white; border: 0; border-radius: 10px; padding: 0.75rem 1rem; cursor: pointer; font-weight: 700; }
-      .ghost { background: transparent; border: 1px solid #475569; }
-      .flash { padding: 0.85rem 1rem; border-radius: 12px; margin-bottom: 1rem; }
-      .flash.error { background: #7f1d1d; }
-      .flash.success { background: #14532d; }
-      .flash.warning { background: #78350f; }
-      .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
-      .item { border: 1px solid #1e293b; border-radius: 14px; padding: 0.9rem; }
-      .muted { color: #94a3b8; }
-      .pill { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; background: #1d4ed8; font-size: 0.8rem; }
-      .number { font-size: 1.3rem; font-weight: 700; }
-      .compact-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-    </style>
-  </head>
-  <body>
-    <main>
-      <div class="topbar">
-        <div>
-          <h1>Budget Chat</h1>
-          <p class="muted">Type what happened. The app will try to structure it automatically and flag anything uncertain for manual review.</p>
-        </div>
-        <form method="post" action="/logout">
-          <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
-          <button class="ghost" type="submit">Logout</button>
-        </form>
-      </div>
+<%- include('_header', { activePage: 'home' }) %>
 
-      <% if (flash) { %>
-        <div class="flash <%= flash.type %>"><%= flash.message %></div>
-      <% } %>
-
-      <section class="card">
+      <section class="card" style="margin-bottom:1rem;">
         <h2>Quick entry</h2>
         <form method="post" action="/entries">
           <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
-          <label for="message" class="muted">Examples: “got salary 2k dollars”, “market 5 USD”, “bought a t-shirt for 5 bucks”.</label>
+          <label for="message" class="muted">Examples: "got salary 2k dollars", "market 5 USD", "bought a t-shirt for 5 bucks".</label>
           <textarea id="message" name="message" rows="3" placeholder="What did you do?" required></textarea>
           <button type="submit">Save message</button>
         </form>
       </section>
 
-      <section class="summary-grid">
-        <% if (balances.length === 0) { %>
-          <div class="card"><h2>No totals yet</h2><p class="muted">Add a complete entry to start seeing analytics.</p></div>
-        <% } %>
-        <% balances.forEach((row) => { %>
-          <article class="card">
-            <h2><%= row.currency || 'N/A' %></h2>
-            <div class="compact-grid">
-              <div><div class="muted">Income</div><div class="number"><%= row.income_total %></div></div>
-              <div><div class="muted">Expense</div><div class="number"><%= row.expense_total %></div></div>
-              <div><div class="muted">Balance</div><div class="number"><%= row.balance %></div></div>
-            </div>
-          </article>
-        <% }) %>
-      </section>
+      <% if (stats.income_count + stats.expense_count === 0) { %>
+        <div class="card" style="margin-bottom:1rem;"><p class="muted">No entries yet. Add your first entry above to start tracking.</p></div>
+      <% } else { %>
+        <div class="kpi-grid" style="margin-bottom:1rem;">
+          <div class="card kpi">
+            <div class="kpi-number positive"><%= stats.total_income_count %></div>
+            <div class="kpi-label">Income entries</div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-number negative"><%= stats.total_expense_count %></div>
+            <div class="kpi-label">Expense entries</div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-number" style="color:#facc15;"><%= pendingCount %></div>
+            <div class="kpi-label">Pending review</div>
+          </div>
+          <% if (stats.top_expense_category) { %>
+          <div class="card kpi">
+            <div class="kpi-number" style="font-size:1.2rem;"><%= stats.top_expense_category %></div>
+            <div class="kpi-label">Top expense category</div>
+          </div>
+          <% } %>
+        </div>
 
-      <div class="grid">
-        <section class="card">
-          <h2>Recent entries</h2>
-          <ul class="list">
-            <% if (recentEntries.length === 0) { %>
-              <li class="item muted">No finalized entries yet.</li>
-            <% } %>
-            <% recentEntries.forEach((entry) => { %>
-              <li class="item">
-                <div><span class="pill"><%= entry.type %></span> <strong><%= entry.amount %> <%= entry.currency %></strong> in <%= entry.category %></div>
-                <div><%= entry.description %></div>
-                <div class="muted"><%= entry.created_at %></div>
-              </li>
-            <% }) %>
-          </ul>
+        <section class="summary-grid" style="margin-bottom:1rem;">
+          <% balances.forEach((row) => { %>
+            <article class="card">
+              <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em;"><%= row.currency || 'N/A' %> — All time</div>
+              <div class="compact-grid">
+                <div>
+                  <div class="muted" style="font-size:0.8rem;">Income</div>
+                  <div class="number positive"><%= row.income_total %></div>
+                </div>
+                <div>
+                  <div class="muted" style="font-size:0.8rem;">Expense</div>
+                  <div class="number negative"><%= row.expense_total %></div>
+                </div>
+                <div>
+                  <div class="muted" style="font-size:0.8rem;">Balance</div>
+                  <div class="number <%= row.balance >= 0 ? 'positive' : 'negative' %>"><%= row.balance %></div>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+          <% thisMonth.forEach((row) => { %>
+            <article class="card">
+              <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em;"><%= row.currency || 'N/A' %> — This month</div>
+              <div class="compact-grid">
+                <div>
+                  <div class="muted" style="font-size:0.8rem;">Income</div>
+                  <div class="number positive"><%= row.month_income %></div>
+                </div>
+                <div>
+                  <div class="muted" style="font-size:0.8rem;">Expense</div>
+                  <div class="number negative"><%= row.month_expense %></div>
+                </div>
+                <div>
+                  <div class="muted" style="font-size:0.8rem;">Net</div>
+                  <div class="number <%= (row.month_income - row.month_expense) >= 0 ? 'positive' : 'negative' %>"><%= (row.month_income - row.month_expense).toFixed(2) %></div>
+                </div>
+              </div>
+            </article>
+          <% }) %>
         </section>
-
-        <section class="card">
-          <h2>Category totals</h2>
-          <ul class="list">
-            <% if (categoryTotals.length === 0) { %>
-              <li class="item muted">No analytics yet.</li>
-            <% } %>
-            <% categoryTotals.forEach((row) => { %>
-              <li class="item">
-                <div><span class="pill"><%= row.type %></span> <strong><%= row.category %></strong></div>
-                <div><%= row.total %> <%= row.currency %></div>
-              </li>
-            <% }) %>
-          </ul>
-        </section>
-      </div>
+      <% } %>
 
       <section class="card">
-        <h2>Manual review queue</h2>
+        <h2>Recent entries</h2>
         <ul class="list">
-          <% if (manualEntries.length === 0) { %>
-            <li class="item muted">Nothing needs manual review right now.</li>
+          <% if (recentEntries.length === 0) { %>
+            <li class="item muted">No finalized entries yet.</li>
           <% } %>
-          <% manualEntries.forEach((entry) => { %>
+          <% recentEntries.forEach((entry) => { %>
             <li class="item">
-              <p><strong>Message:</strong> <%= entry.message %></p>
-              <p class="muted"><%= entry.parser_reason || 'Needs manual confirmation.' %></p>
-              <form method="post" action="/entries/<%= entry.id %>/resolve">
-                <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
-                <div class="compact-grid">
-                  <div>
-                    <label for="type-<%= entry.id %>">Type</label>
-                    <select id="type-<%= entry.id %>" name="type">
-                      <option value="expense" <%= entry.type === 'expense' ? 'selected' : '' %>>Expense</option>
-                      <option value="income" <%= entry.type === 'income' ? 'selected' : '' %>>Income</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="amount-<%= entry.id %>">Amount</label>
-                    <input id="amount-<%= entry.id %>" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" value="<%= entry.amount || '' %>" required />
-                  </div>
-                  <div>
-                    <label for="currency-<%= entry.id %>">Currency</label>
-                    <input id="currency-<%= entry.id %>" name="currency" value="<%= entry.currency || 'USD' %>" maxlength="6" required />
-                  </div>
-                </div>
-                <label for="category-<%= entry.id %>">Category</label>
-                <select id="category-<%= entry.id %>" name="category" required>
-                  <option value="">Select a category</option>
-                  <% incomeCategories.forEach((category) => { %>
-                    <option value="<%= category %>" <%= entry.category === category ? 'selected' : '' %>><%= category %> (income)</option>
-                  <% }) %>
-                  <% expenseCategories.forEach((category) => { %>
-                    <option value="<%= category %>" <%= entry.category === category ? 'selected' : '' %>><%= category %> (expense)</option>
-                  <% }) %>
-                </select>
-                <label for="description-<%= entry.id %>">Description</label>
-                <input id="description-<%= entry.id %>" name="description" value="<%= entry.description || entry.message %>" required />
-                <button type="submit">Finalize entry</button>
-              </form>
+              <div><span class="pill <%= entry.type %>"><%= entry.type %></span> <strong><%= entry.amount %> <%= entry.currency %></strong> in <%= entry.category %></div>
+              <div><%= entry.description %></div>
+              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= entry.created_at %></div>
             </li>
           <% }) %>
         </ul>
       </section>
-    </main>
-  </body>
-</html>
+
+<%- include('_footer') %>
