@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Budget Chat Admin</title>
+    <style>
+      :root { color-scheme: light dark; font-family: Arial, sans-serif; }
+      body { margin: 0; background: #0f172a; color: #e2e8f0; }
+      main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+      .card { background: #111827; border-radius: 16px; padding: 1.25rem; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.25); margin-bottom: 1rem; }
+      .flash { padding: 0.85rem 1rem; border-radius: 12px; margin-bottom: 1rem; }
+      .flash.error { background: #7f1d1d; }
+      .flash.success { background: #14532d; }
+      .flash.warning { background: #78350f; }
+      .muted { color: #94a3b8; }
+      ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+      li { border: 1px solid #1e293b; border-radius: 12px; padding: 0.9rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+      button { background: #2563eb; color: white; border: 0; border-radius: 10px; padding: 0.7rem 1rem; cursor: pointer; font-weight: 700; }
+      button.ghost { background: transparent; border: 1px solid #475569; color: #e2e8f0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topbar">
+        <div>
+          <h1 style="margin:0;">Admin Dashboard</h1>
+          <p class="muted" style="margin:0.35rem 0 0 0;">User management and verification</p>
+        </div>
+        <form method="post" action="/logout">
+          <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+          <button class="ghost" type="submit">Logout</button>
+        </form>
+      </div>
+
+      <% if (flash) { %>
+        <div class="flash <%= flash.type %>"><%= flash.message %></div>
+      <% } %>
+
+      <section class="card">
+        <h2 style="margin-top:0;">Pending verification (<%= pendingUsers.length %>)</h2>
+        <% if (pendingUsers.length === 0) { %>
+          <p class="muted">No users are waiting for verification.</p>
+        <% } else { %>
+          <ul>
+            <% pendingUsers.forEach((user) => { %>
+              <li>
+                <div>
+                  <strong><%= user.email %></strong>
+                  <div class="muted" style="font-size:0.85rem;">Registered: <%= user.created_at %></div>
+                </div>
+                <form method="post" action="/admin/users/<%= user.id %>/verify">
+                  <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                  <button type="submit">Verify user</button>
+                </form>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0;">Verified users (<%= verifiedUsers.length %>)</h2>
+        <% if (verifiedUsers.length === 0) { %>
+          <p class="muted">No verified users yet.</p>
+        <% } else { %>
+          <ul>
+            <% verifiedUsers.forEach((user) => { %>
+              <li>
+                <div>
+                  <strong><%= user.email %></strong>
+                  <div class="muted" style="font-size:0.85rem;">Verified: <%= user.verified_at || 'N/A' %></div>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+    </main>
+  </body>
+</html>

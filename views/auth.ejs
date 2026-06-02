@@ -23,7 +23,7 @@
   <body>
     <main>
       <h1>Budget Chat</h1>
-      <p class="muted">Register with email and password, then track income and spending by typing natural-language messages.</p>
+      <p class="muted">Register with email and password. New users can sign in after admin verification.</p>
       <% if (flash) { %>
         <div class="flash <%= flash.type %>"><%= flash.message %></div>
       <% } %>
@@ -38,6 +38,7 @@
             <input id="register-password" name="password" type="password" autocomplete="new-password" minlength="8" required />
             <button type="submit">Register</button>
           </form>
+          <p class="muted" style="margin:0;">After registration, your account stays pending until an admin verifies it.</p>
         </section>
         <section class="card">
           <h2>Sign in</h2>
@@ -48,6 +49,17 @@
             <label for="login-password">Password</label>
             <input id="login-password" name="password" type="password" autocomplete="current-password" required />
             <button type="submit">Login</button>
+          </form>
+        </section>
+        <section class="card">
+          <h2>Admin sign in</h2>
+          <form method="post" action="/admin/login">
+            <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+            <label for="admin-username">Username</label>
+            <input id="admin-username" name="username" type="text" autocomplete="username" required />
+            <label for="admin-password">Password</label>
+            <input id="admin-password" name="password" type="password" autocomplete="current-password" required />
+            <button type="submit">Admin login</button>
           </form>
         </section>
       </div>

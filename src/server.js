@@ -5,6 +5,7 @@ const config = {
   port: Number.parseInt(process.env.PORT || '3000', 10),
   databasePath: process.env.DATABASE_PATH || './data/budget.db',
   sessionSecret: process.env.SESSION_SECRET,
+  adminPassword: process.env.ADMIN_PASSWORD || '',
   secureCookies: process.env.COOKIE_SECURE === 'true',
   openAiApiKey: process.env.OPENAI_API_KEY || '',
   openAiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
@@ -13,6 +14,9 @@ const config = {
 
 if (!config.sessionSecret) {
   throw new Error('SESSION_SECRET must be set before starting the app.');
+}
+if (!config.adminPassword) {
+  throw new Error('ADMIN_PASSWORD must be set before starting the app.');
 }
 
 const db = openDatabase(config.databasePath);

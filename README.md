@@ -50,6 +50,7 @@ Required or useful environment variables used by this app:
 - `PORT` *(optional, default: `8542`)* — app listen port inside the container
 - `APP_PORT` *(optional, default: `8542`)* — host port exposed on `127.0.0.1`
 - `SESSION_SECRET` *(required)* — session signing secret; set a long random value before starting the app
+- `ADMIN_PASSWORD` *(required)* — admin login password for username `admin`
 - `DATABASE_PATH` *(optional, default in container: `/app/data/budget.db`)* — SQLite database path
 - `OPENAI_API_KEY` *(optional but required for AI parsing)* — OpenAI API key
 - `OPENAI_MODEL` *(optional, default: `gpt-4o-mini`)* — OpenAI model name
@@ -62,6 +63,7 @@ If `OPENAI_API_KEY` is not set, the app falls back to a simple built-in parser a
 
 ```bash
 export SESSION_SECRET='replace-with-a-long-random-secret'
+export ADMIN_PASSWORD='replace-with-a-strong-admin-password'
 docker compose up --build
 ```
 
@@ -99,3 +101,9 @@ npm start
 ## Manual review flow
 
 If the parser cannot confidently extract a structured entry, the message is still saved. The user can then complete the missing fields from the **Manual review queue** in the dashboard.
+
+## User verification flow
+
+- New users can register but are created in a pending state.
+- Only the admin account (`admin` + `ADMIN_PASSWORD`) can verify pending users from the admin dashboard.
+- Pending users cannot log in until they are verified.
