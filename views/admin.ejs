@@ -18,7 +18,9 @@
       ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
       li { border: 1px solid #1e293b; border-radius: 12px; padding: 0.9rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
       button { background: #2563eb; color: white; border: 0; border-radius: 10px; padding: 0.7rem 1rem; cursor: pointer; font-weight: 700; }
+      .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
       button.ghost { background: transparent; border: 1px solid #475569; color: #e2e8f0; }
+      button.danger { background: #b91c1c; }
     </style>
   </head>
   <body>
@@ -50,10 +52,16 @@
                   <strong><%= user.email %></strong>
                   <div class="muted" style="font-size:0.85rem;">Registered: <%= user.created_at %></div>
                 </div>
-                <form method="post" action="/admin/users/<%= user.id %>/verify">
-                  <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
-                  <button type="submit">Verify user</button>
-                </form>
+                <div class="actions">
+                  <form method="post" action="/admin/users/<%= user.id %>/verify">
+                    <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                    <button type="submit">Verify user</button>
+                  </form>
+                  <form method="post" action="/admin/users/<%= user.id %>/dismiss">
+                    <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+                    <button class="danger" type="submit">Dismiss</button>
+                  </form>
+                </div>
               </li>
             <% }) %>
           </ul>

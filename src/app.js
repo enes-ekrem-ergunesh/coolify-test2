@@ -492,6 +492,25 @@ function createApp({ db, config }) {
     return res.redirect('/admin');
   });
 
+  app.post('/admin/users/:id/dismiss', (req, res) => {
+    if (!requireAdmin(req, res)) return undefined;
+
+    const userId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      req.session.flash = { type: 'error', message: 'Invalid user.' };
+      return res.status(400).redirect('/admin');
+    }
+
+    const result = db
+      .prepare('DELETE FROM users WHERE id = ? AND is_verified = 0')
+      .run(userId);
+
+    req.session.flash = result.changes > 0
+      ? { type: 'success', message: 'Pending registration dismissed.' }
+      : { type: 'warning', message: 'User not found or already verified.' };
+    return res.redirect('/admin');
+  });
+
   app.post('/logout', (req, res) => {
     req.session.destroy(() => {
       res.redirect('/');
