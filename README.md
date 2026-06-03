@@ -111,5 +111,5 @@ If the parser cannot confidently extract a structured entry, the message is stil
 ## User verification flow
 
 - New users can register but are created in a pending state.
-- Only the admin account (`admin` + `ADMIN_PASSWORD`) can verify pending users from the admin dashboard.
+- Only the admin account (`admin` + `ADMIN_PASSWORD`) can verify or dismiss pending users from the admin dashboard.
 - Pending users cannot log in until they are verified.
