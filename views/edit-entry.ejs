@@ -1,0 +1,43 @@
+<%- include('_header', { activePage }) %>
+
+      <section class="card">
+        <h2>Edit entry</h2>
+        <form method="post" action="/entries/<%= entry.id %>/edit">
+          <input name="csrfToken" type="hidden" value="<%= csrfToken %>" />
+          <div class="compact-grid">
+            <div>
+              <label for="type">Type</label>
+              <select id="type" name="type">
+                <option value="expense" <%= entry.type === 'expense' ? 'selected' : '' %>>Expense</option>
+                <option value="income" <%= entry.type === 'income' ? 'selected' : '' %>>Income</option>
+              </select>
+            </div>
+            <div>
+              <label for="amount">Amount</label>
+              <input id="amount" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" value="<%= entry.amount %>" required />
+            </div>
+            <div>
+              <label for="currency">Currency</label>
+              <input id="currency" name="currency" value="<%= entry.currency || 'USD' %>" maxlength="6" required />
+            </div>
+          </div>
+          <label for="category">Category</label>
+          <select id="category" name="category" required>
+            <option value="">Select a category</option>
+            <% incomeCategories.forEach((category) => { %>
+              <option value="<%= category %>" <%= entry.category === category ? 'selected' : '' %>><%= category %> (income)</option>
+            <% }) %>
+            <% expenseCategories.forEach((category) => { %>
+              <option value="<%= category %>" <%= entry.category === category ? 'selected' : '' %>><%= category %> (expense)</option>
+            <% }) %>
+          </select>
+          <label for="description">Description</label>
+          <input id="description" name="description" value="<%= entry.description %>" required />
+          <div class="item-actions">
+            <button type="submit">Save changes</button>
+            <a href="<%= entry.type === 'income' ? '/incomes' : '/expenses' %>" class="nav-link">Cancel</a>
+          </div>
+        </form>
+      </section>
+
+<%- include('_footer') %>

@@ -299,6 +299,38 @@ function createApp({ db, config }) {
     });
   });
 
+  app.get('/entries/:id/edit', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).redirect('/');
+    }
+
+    const entryId = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(entryId) || entryId <= 0) {
+      req.session.flash = { type: 'error', message: 'Entry not found.' };
+      return res.status(404).redirect('/');
+    }
+
+    const entry = db
+      .prepare(
+        `SELECT id, type, category, amount, currency, description
+         FROM entries
+         WHERE id = ? AND user_id = ? AND status = 'complete' AND deleted_at IS NULL`,
+      )
+      .get(entryId, req.session.userId);
+
+    if (!entry) {
+      req.session.flash = { type: 'error', message: 'Entry not found.' };
+      return res.status(404).redirect('/');
+    }
+
+    return res.render('edit-entry', {
+      entry,
+      incomeCategories: INCOME_CATEGORIES,
+      expenseCategories: EXPENSE_CATEGORIES,
+      activePage: entry.type === 'income' ? 'incomes' : 'expenses',
+    });
+  });
+
   app.get('/report', (req, res) => {
     if (!req.session.userId) return res.status(401).redirect('/');
 
@@ -634,6 +666,43 @@ function createApp({ db, config }) {
     db.prepare('UPDATE entries SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?').run(entryId, req.session.userId);
     req.session.flash = { type: 'success', message: 'Entry moved to trash.' };
     return res.redirect(existing.type === 'income' ? '/incomes' : '/expenses');
+  });
+
+  app.post('/entries/:id/edit', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).redirect('/');
+    }
+
+    const entryId = Number.parseInt(req.params.id, 10);
+    const type = req.body.type === 'income' ? 'income' : 'expense';
+    const category = String(req.body.category || '').trim();
+    const amount = Number.parseFloat(String(req.body.amount || '').trim());
+    const currency = String(req.body.currency || 'USD').trim().toUpperCase() || 'USD';
+    const description = String(req.body.description || '').trim();
+    const allowedCategories = categoryOptions(type);
+
+    const existing = db
+      .prepare("SELECT id FROM entries WHERE id = ? AND user_id = ? AND status = 'complete' AND deleted_at IS NULL")
+      .get(entryId, req.session.userId);
+
+    if (!existing) {
+      req.session.flash = { type: 'error', message: 'Entry not found.' };
+      return res.status(404).redirect('/');
+    }
+
+    if (!allowedCategories.includes(category) || !Number.isFinite(amount) || amount <= 0 || !description) {
+      req.session.flash = { type: 'error', message: 'Use a valid type, category, amount, and description to update the entry.' };
+      return res.status(400).redirect(`/entries/${entryId}/edit`);
+    }
+
+    db.prepare(
+      `UPDATE entries
+       SET type = ?, category = ?, amount = ?, currency = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND user_id = ? AND status = 'complete' AND deleted_at IS NULL`,
+    ).run(type, category, amount, currency, description, entryId, req.session.userId);
+
+    req.session.flash = { type: 'success', message: 'Entry updated successfully.' };
+    return res.redirect(type === 'income' ? '/incomes' : '/expenses');
   });
 
   app.post('/entries/:id/delete', (req, res) => {
