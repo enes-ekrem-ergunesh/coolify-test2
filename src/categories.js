@@ -1,4 +1,4 @@
-const INCOME_CATEGORIES = ['salary', 'freelance', 'bonus', 'gift', 'investment'];
+const INCOME_CATEGORIES = ['salary', 'freelance', 'bonus', 'gift', 'investment', 'loan'];
 const EXPENSE_CATEGORIES = [
   'groceries',
   'dining',
@@ -10,6 +10,10 @@ const EXPENSE_CATEGORIES = [
   'entertainment',
   'education',
   'travel',
+  'loan',
+  'gift',
+  'family',
+  'charity',
 ];
 
 function categoryOptions(type) {

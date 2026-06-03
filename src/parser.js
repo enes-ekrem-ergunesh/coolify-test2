@@ -6,8 +6,9 @@ const KEYWORDS = {
     salary: ['salary', 'paycheck', 'wage'],
     freelance: ['freelance', 'client', 'contract'],
     bonus: ['bonus', 'commission'],
-    gift: ['gift', 'present', 'allowance'],
+    gift: ['received gift', 'got gift', 'gift received', 'allowance'],
     investment: ['dividend', 'investment', 'interest', 'stock'],
+    loan: ['received loan', 'borrowed', 'borrowed money', 'took loan', 'loan disbursement'],
   },
   expense: {
     groceries: ['market', 'grocery', 'groceries', 'supermarket'],
@@ -20,6 +21,10 @@ const KEYWORDS = {
     entertainment: ['movie', 'netflix', 'game', 'concert', 'cinema'],
     education: ['course', 'book', 'tuition', 'school', 'class'],
     travel: ['flight', 'hotel', 'trip', 'vacation', 'travel'],
+    loan: ['paid loan', 'loan payment', 'loan repayment', 'loan installment', 'emi', 'debt payment'],
+    gift: ['bought gift', 'gave gift', 'gift for', 'present for'],
+    family: ['family', 'parents', 'mom', 'mother', 'dad', 'father', 'child', 'children'],
+    charity: ['charity', 'donation', 'donate', 'zakat'],
   },
 };
 
@@ -175,6 +180,8 @@ async function openAiParse(message, config) {
     baseURL: config.baseUrl || undefined,
   });
 
+  const incomeCategories = INCOME_CATEGORIES.join(', ');
+  const expenseCategories = EXPENSE_CATEGORIES.join(', ');
   const completion = await client.chat.completions.create({
     model: config.model,
     response_format: { type: 'json_object' },
@@ -183,8 +190,8 @@ async function openAiParse(message, config) {
         role: 'system',
         content: [
           'You convert personal finance messages into structured budget entries.',
-          'Use only these income categories: salary, freelance, bonus, gift, investment.',
-          'Use only these expense categories: groceries, dining, transport, utilities, rent, shopping, health, entertainment, education, travel.',
+          `Use only these income categories: ${incomeCategories}.`,
+          `Use only these expense categories: ${expenseCategories}.`,
           'Return JSON with keys understood (boolean), type, category, amount, currency, description, and reason.',
           'If you are not confident, set understood to false and explain why in reason.',
           'Normalize currency to ISO code like USD.',
