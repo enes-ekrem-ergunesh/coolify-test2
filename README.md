@@ -8,6 +8,7 @@ A small Docker Compose app for personal budget tracking with:
 - a manual review queue for anything the parser cannot confidently understand
 - soft delete (trash) and permanent delete flow for entries
 - basic budget analytics (balances and category totals)
+- a dashboard section for today's expenses
 - wallet balance visibility and monthly start/end money reporting
 - SQLite persistence
 - a Docker health check for the main app
