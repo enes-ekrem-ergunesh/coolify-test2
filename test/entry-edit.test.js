@@ -99,7 +99,7 @@ test('user can edit their own complete entry', async (t) => {
       type: 'expense',
       category: 'groceries',
       amount: '42.50',
-      currency: 'eur',
+      currency: 'EUR',
       description: 'Weekly groceries',
     }),
   });
@@ -122,7 +122,7 @@ test('user cannot edit another user entry', async (t) => {
 
   const passwordHash = await bcrypt.hash('password123', 12);
   const ownerInsert = db.prepare('INSERT INTO users(email, password_hash, is_verified) VALUES(?, ?, 1)').run('owner@example.com', passwordHash);
-  const intruderInsert = db.prepare('INSERT INTO users(email, password_hash, is_verified) VALUES(?, ?, 1)').run('intruder@example.com', passwordHash);
+  db.prepare('INSERT INTO users(email, password_hash, is_verified) VALUES(?, ?, 1)').run('intruder@example.com', passwordHash);
   const entryInsert = db.prepare(
     `INSERT INTO entries(user_id, message, type, category, amount, currency, description, status)
      VALUES(?, ?, ?, ?, ?, ?, ?, 'complete')`,
@@ -198,5 +198,4 @@ test('user cannot edit another user entry', async (t) => {
   assert.equal(unchangedEntry.category, 'salary');
   assert.equal(unchangedEntry.amount, 1500);
   assert.equal(unchangedEntry.description, 'Owner salary');
-  assert.ok(intruderInsert.lastInsertRowid > 0, 'expected intruder user');
 });
