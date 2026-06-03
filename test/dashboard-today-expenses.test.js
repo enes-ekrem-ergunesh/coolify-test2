@@ -98,5 +98,7 @@ test('dashboard shows only today expenses in today section', async (t) => {
   assert.match(dashboardHtml, /Today's expenses/);
   assert.match(dashboardHtml, /Today groceries/);
   assert.match(dashboardHtml, /18\.75/);
-  assert.doesNotMatch(dashboardHtml, /Yesterday coffee/);
+  const todaySection = dashboardHtml.match(/<h2>Today's expenses<\/h2>[\s\S]*?<h2>Recent entries<\/h2>/)?.[0] || '';
+  assert.ok(todaySection, 'expected today expenses section');
+  assert.doesNotMatch(todaySection, /Yesterday coffee/);
 });

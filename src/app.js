@@ -212,15 +212,12 @@ function createApp({ db, config }) {
       currency: row.currency,
       amount: row.balance,
     }));
-    const todayExpenseTotalsByCurrency = [];
+    const todayExpenseTotalsMap = new Map();
     for (const row of todayExpenses) {
-      const existing = todayExpenseTotalsByCurrency.find((item) => item.currency === row.currency);
-      if (existing) {
-        existing.total = Number((existing.total + row.amount).toFixed(2));
-      } else {
-        todayExpenseTotalsByCurrency.push({ currency: row.currency, total: Number(row.amount.toFixed(2)) });
-      }
+      const currentTotal = todayExpenseTotalsMap.get(row.currency) || 0;
+      todayExpenseTotalsMap.set(row.currency, Number((currentTotal + row.amount).toFixed(2)));
     }
+    const todayExpenseTotalsByCurrency = Array.from(todayExpenseTotalsMap.entries()).map(([currency, total]) => ({ currency, total }));
 
     return res.render('dashboard', {
       balances,
