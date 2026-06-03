@@ -198,16 +198,37 @@ function createApp({ db, config }) {
       )
       .all(req.session.userId);
 
+    const todayExpenses = db
+      .prepare(
+        `SELECT id, category, amount, currency, description, created_at
+        FROM entries
+        WHERE user_id = ? AND status = 'complete' AND type = 'expense' AND deleted_at IS NULL
+          AND strftime('%Y-%m-%d', created_at) = strftime('%Y-%m-%d', 'now')
+        ORDER BY created_at DESC, id DESC`,
+      )
+      .all(req.session.userId);
+
     const walletByCurrency = balances.map((row) => ({
       currency: row.currency,
       amount: row.balance,
     }));
+    const todayExpenseTotalsByCurrency = [];
+    for (const row of todayExpenses) {
+      const existing = todayExpenseTotalsByCurrency.find((item) => item.currency === row.currency);
+      if (existing) {
+        existing.total = Number((existing.total + row.amount).toFixed(2));
+      } else {
+        todayExpenseTotalsByCurrency.push({ currency: row.currency, total: Number(row.amount.toFixed(2)) });
+      }
+    }
 
     return res.render('dashboard', {
       balances,
       walletByCurrency,
       thisMonth,
       stats,
+      todayExpenses,
+      todayExpenseTotalsByCurrency,
       recentEntries,
       activePage: 'home',
     });

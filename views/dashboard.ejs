@@ -91,6 +91,30 @@
         </ul>
       </section>
 
+      <section class="card" style="margin-bottom:1rem;">
+        <h2>Today's expenses</h2>
+        <ul class="list">
+          <% if (todayExpenseTotalsByCurrency.length === 0) { %>
+            <li class="item muted">No expenses recorded today.</li>
+          <% } %>
+          <% todayExpenseTotalsByCurrency.forEach((row) => { %>
+            <li class="item" style="display:flex;justify-content:space-between;align-items:center;">
+              <strong><%= row.currency || 'N/A' %></strong>
+              <span class="number negative"><%= row.total %></span>
+            </li>
+          <% }) %>
+        </ul>
+        <ul class="list" style="margin-top:0.75rem;">
+          <% todayExpenses.slice(0, 8).forEach((entry) => { %>
+            <li class="item">
+              <div><strong><%= entry.amount %> <%= entry.currency %></strong> in <%= entry.category %></div>
+              <div><%= entry.description %></div>
+              <div class="muted" style="font-size:0.8rem;margin-top:0.25rem;"><%= entry.created_at %></div>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+
       <section class="card">
         <h2>Recent entries</h2>
         <ul class="list">
